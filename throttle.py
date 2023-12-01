@@ -24,9 +24,9 @@ def move(direction):
         utime.sleep_ms(10)
 
 
-move(dir.FORWARD)
-utime.sleep(2)
-move(dir.REVERSE)
+# move(dir.FORWARD)
+# utime.sleep(2)
+# move(dir.REVERSE)
 
 # engine._set_motor(dir.REVERSE, 10)
 # utime.sleep(0.5)
