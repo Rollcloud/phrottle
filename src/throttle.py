@@ -7,8 +7,21 @@ from layout import Locomotive
 engine = Locomotive(orientation=facing.LEFT)
 
 
+def velocity():
+    return engine.velocity
+
+
 def stop():
     engine.stop()
+    print(f"velocity={engine.velocity:.2f} units/s")
+
+
+def accelerate(direction):
+    dir = 1 if direction == rel_dir.FORWARD else -1
+    a = 1 if abs(engine.velocity) >= 5 else 5
+    a *= dir
+    engine.accelerate(a)
+
     print(f"velocity={engine.velocity:.2f} units/s")
 
 

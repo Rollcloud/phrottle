@@ -64,7 +64,11 @@ async def move_ws(request, ws):
             reply = {"type": "pong", "date": time.time()}
         elif message["type"] == "stop":
             throttle.stop()
-            reply = {"type": "ack", "text": "stopped", "date": time.time()}
+            reply = {
+                "type": "ack",
+                "text": f"commanded: {throttle.velocity()}",
+                "date": time.time(),
+            }
         elif message["type"] == "move":
             direction_in = message["text"]
             if direction_in == "left":
@@ -77,9 +81,13 @@ async def move_ws(request, ws):
                 if direction_in == "forward"
                 else RelativeDirection.REVERSE
             )
-            throttle.move(direction)
 
-            reply = {"type": "ack", "text": f"moving {direction_in}", "date": time.time()}
+            throttle.accelerate(direction)
+            reply = {
+                "type": "ack",
+                "text": f"commanded: {throttle.velocity()}",
+                "date": time.time(),
+            }
         else:
             # echo message
             print(message)
@@ -120,6 +128,7 @@ try:
     print(f"Running app on http://{address}")
     app.run(port=80)
 except KeyboardInterrupt:
+    throttle.stop()
     app.shutdown()
 except Exception as err:
     flash_led(t=1, n=5)

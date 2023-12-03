@@ -15,12 +15,27 @@ const send_message = (type, text) => {
   };
   serverSocket.send(JSON.stringify(message));
 };
+const display_message = (text) => {
+  const li = document.createElement("li");
+  li.classList.add("list-group-item", "bg-dark", "text-light", "text-opacity-75");
+  li.textContent = text;
+  statusList.prepend(li);
+
+  while (statusList.childNodes.length > 5) {
+    statusList.removeChild(statusList.childNodes[statusList.childNodes.length - 1]);
+  }
+};
+
+const statusList = document.querySelector("#status-list");
 
 serverSocket.onopen = () => {
   send_message("ping", "");
 };
 serverSocket.onmessage = (event) => {
   console.log(event.data);
+  const message = JSON.parse(event.data);
+  if (message["type"] == "pong") display_message("ready");
+  else if (message["type"] == "ack") display_message(message["text"]);
 };
 
 let moveLeftBtn = document.querySelector("#move-left");
@@ -45,3 +60,61 @@ moveRightBtn.addEventListener("touchstart", move_right);
 moveRightBtn.addEventListener("mousedown", move_right);
 moveRightBtn.addEventListener("touchend", stop);
 moveRightBtn.addEventListener("mouseup", stop);
+
+window.addEventListener(
+  "keydown",
+  (event) => {
+    if (event.defaultPrevented) {
+      return; // Do nothing if event already handled
+    }
+
+    switch (event.code) {
+      case "KeyA":
+      case "ArrowLeft":
+        move_left();
+        break;
+      case "KeyD":
+      case "ArrowRight":
+        move_right();
+        break;
+    }
+  },
+  true
+);
+// window.addEventListener(
+//   "keyup",
+//   (event) => {
+//     if (event.defaultPrevented) {
+//       return; // Do nothing if event already handled
+//     }
+
+//     switch (event.code) {
+//       case "KeyA":
+//       case "ArrowLeft":
+//         stop();
+//         break;
+//       case "KeyD":
+//       case "ArrowRight":
+//         stop();
+//         break;
+//     }
+//   },
+//   true
+// );
+window.addEventListener(
+  "keydown",
+  (event) => {
+    if (event.defaultPrevented) {
+      return; // Do nothing if event already handled
+    }
+
+    switch (event.code) {
+      case "KeyS":
+      case "ArrowDown":
+      case "Space":
+        stop();
+        break;
+    }
+  },
+  true
+);
