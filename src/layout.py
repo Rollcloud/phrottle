@@ -108,7 +108,7 @@ class Locomotive:
             self.evaluator_left = None
             self.evaluator_right = None
 
-        def register_evaluators(self, evaluator_left: Evaluator, evaluator_right: Evaluator):
+        def register_evaluators(self, evaluator_left, evaluator_right):
             self.evaluator_left = evaluator_left
             self.evaluator_right = evaluator_right
 

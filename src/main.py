@@ -1,6 +1,8 @@
-from microdot import Microdot, send_file
-from phew import get_ip_address
-from phew.logging import LOG_ALL, disable_logging_types
+import json
+import time
+
+from microdot_asyncio import Microdot, send_file
+from microdot_asyncio_websocket import with_websocket
 
 import hardware
 import throttle
@@ -10,10 +12,9 @@ from layout import RelativeDirection
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
 
-disable_logging_types(LOG_ALL)
 flash_led = hardware.flash_led
 
-wifi.connect()
+address = wifi.connect_with_saved_credentials()
 flash_led(n=2)  # show that wifi connection was successful
 
 
@@ -34,17 +35,57 @@ def favicon(request):
     return send_file("/static/favicon.ico", max_age=ONE_HOUR_IN_SECONDS)
 
 
+@app.get("/script.js")
+def script(request):
+    return send_file("script.js")
+
+
 @app.route("/static/<path:path>")
 def static(request, path):
     if ".." in path:
         # directory traversal is not allowed
         return "Not found", 404
-    return send_file("static/" + path, max_age=ONE_DAY_IN_SECONDS)
+    return send_file("static/" + path, max_age=ONE_HOUR_IN_SECONDS)
 
 
 @app.get("/")
 def index(request):
     return send_file("templates/throttle.html")
+
+
+@app.route("/move")
+@with_websocket
+async def move_ws(request, ws):
+    while True:
+        incoming = await ws.receive()
+        flash_led(t=0.005)
+        message = json.loads(incoming)
+        if message["type"] == "ping":
+            reply = {"type": "pong", "date": time.time()}
+        elif message["type"] == "stop":
+            throttle.stop()
+            reply = {"type": "ack", "text": "stopped", "date": time.time()}
+        elif message["type"] == "move":
+            direction_in = message["text"]
+            if direction_in == "left":
+                direction_in = "forward"
+            if direction_in == "right":
+                direction_in = "reverse"
+
+            direction = (
+                RelativeDirection.FORWARD
+                if direction_in == "forward"
+                else RelativeDirection.REVERSE
+            )
+            throttle.move(direction)
+
+            reply = {"type": "ack", "text": f"moving {direction_in}", "date": time.time()}
+        else:
+            # echo message
+            print(message)
+            reply = message
+
+        await ws.send(json.dumps(reply))
 
 
 @app.get("/stop")
@@ -76,7 +117,6 @@ def not_found(request):
 
 
 try:
-    address = get_ip_address()
     print(f"Running app on http://{address}")
     app.run(port=80)
 except KeyboardInterrupt:
