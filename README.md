@@ -1,4 +1,4 @@
-# Phrottle
+# ![lever-arm](src/static/lever-arm.png) Phrottle
 
 A model railway throttle for the Pico.
 
@@ -23,3 +23,7 @@ With thanks to [SoongJr](https://github.com/SoongJr/pi-pico/blob/main/README.md)
    ```sh
    rshell 'cp setup/install-dependencies.py /pyboard; repl ~ exec(open("/install-dependencies.py").read())'
    ```
+
+Attributions:
+
+- Lever Icon: [Gambling icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/gambling)

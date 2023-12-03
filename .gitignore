@@ -4,3 +4,7 @@
 # IDE
 .vscode/
 .micropico
+
+# Python
+*.pyc
+__pycache__
