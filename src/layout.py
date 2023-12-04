@@ -22,66 +22,92 @@ class RelativeDirection:
 # direction locomotive moves when powered forwards
 TRACK_POLARITY = AbsoluteDirection.LEFT
 
+# motor steps per unit velocity
+STEPS_PER_UNIT = 1
+
+LOCOMOTIVE_PROFILES = {
+    "lourie": {"start_step_forward": 7, "start_step_reverse": 8, "max_speed": 30}
+}
+
 
 class Locomotive:
     """An instance of a locomotive containing a DC motor."""
 
-    def __init__(self, orientation: int = AbsoluteDirection.LEFT) -> None:
+    def __init__(self, id=None, orientation: int = AbsoluteDirection.LEFT) -> None:
         """
         Create a new locomotive instance.
+        ID: name of profile to apply to locomotive
         Orientation: AbsoluteDirection locomotive is facing
         """
+        self.id = id.lower() if id else None
+        self.profile = LOCOMOTIVE_PROFILES[self.id] if self.id else {}
         self.orientation = orientation
         self.velocity = 0  # units
+        self._motor_step = 0
+        self._motor_dir = hardware.FORWARD
         hardware.init_motor()
 
     def stop(self):
         self.velocity = 0
-        self.set_motor_velocity()
+        self._set_motor_step()
 
-    def _motion_direction(self):
+    def _velocity_direction(self):
         """Current direction of motion based on velocity."""
         return RelativeDirection.FORWARD if self.velocity >= 0 else RelativeDirection.REVERSE
 
-    def _motion_speed(self):
+    def _speed(self):
         """Current speed of motion based on velocity."""
         return abs(self.velocity)
 
-    def _set_motor_direct(self, locomotive_direction: int, speed: float):
+    def _set_motor(self):
         """
-        Set motor RelativeDirection to locomotive orientation and speed in units.
-        Will stop motor if steep is negative.
-        Suggested for direct motor control.
+        Set motor to motor step and direction.
+        Will stop motor if step is negative.
         """
-        if speed <= 0:
+        if self._motor_step <= 0:
             hardware.motor_off()
-            return
-        direction_inversions = TRACK_POLARITY + self.orientation + locomotive_direction
-        motor_direction = hardware.FORWARD if direction_inversions % 2 == 0 else hardware.REVERSE
-        percentage = speed
-        hardware.motor_on(motor_direction, percentage)
+        else:
+            hardware.motor_on(self._motor_dir, self._motor_step)
 
-    def set_motor_velocity(self):
-        """Set the motor to the locomotive's current velocity."""
-        direction_inversions = TRACK_POLARITY + self.orientation + self._motion_direction()
-        motor_direction = hardware.FORWARD if direction_inversions % 2 == 0 else hardware.REVERSE
-        percentage = self._motion_speed()
-        hardware.motor_on(motor_direction, percentage)
+    def _set_motor_step(self):
+        """Set the motor step from the locomotive's current velocity."""
+        direction_inversions = TRACK_POLARITY + self.orientation + self._velocity_direction()
+        self._motor_dir = hardware.FORWARD if direction_inversions % 2 == 0 else hardware.REVERSE
+
+        speed = self._speed()
+
+        if self.velocity > 0:
+            # moving forwards
+            min_step = self.profile.get("start_step_forward", 5)
+        elif self.velocity < 0:
+            # moving in reverse
+            min_step = self.profile.get("start_step_reverse", 5)
+        else:
+            # not moving
+            min_step = 0
+
+        self._motor_step = min_step + speed * STEPS_PER_UNIT
+        self._set_motor()
 
     def accelerate(self, amount: float = 0.2):
         """Accelerate at amount/s^2 where positive corresponds to forward."""
-        self.velocity += amount
-        self.set_motor_velocity()
+        if self.velocity < 0:
+            self.velocity = max(self.velocity + amount, -self.profile.get("max_speed", 100))
+        else:
+            self.velocity = min(self.velocity + amount, self.profile.get("max_speed", 100))
+        self._set_motor_step()
 
     def brake(self, amount: float = 0.2):
         """Apply a deceleration of amount/s^2 to the current speed, stopping at zero."""
-        speed = self._motion_speed()
+        speed = self._speed()
         if amount >= speed:
             self.velocity = 0
             return
         speed -= amount
-        self.velocity = speed * (1 if self._motion_direction() == RelativeDirection.FORWARD else -1)
-        self.set_motor_velocity()
+        self.velocity = speed * (
+            1 if self._velocity_direction() == RelativeDirection.FORWARD else -1
+        )
+        self._set_motor_step()
 
     class Evaluator:
         """A piece of railway bordered at each ingress by Train Detectors."""

@@ -4,25 +4,37 @@ from layout import RelativeDirection as rel_dir
 from layout import AbsoluteDirection as facing
 from layout import Locomotive
 
-engine = Locomotive(orientation=facing.LEFT)
+_engine = Locomotive(id="Lourie", orientation=facing.LEFT)
+
+
+def engine_id():
+    return _engine.id
+
+
+def profile():
+    return _engine.profile
 
 
 def velocity():
-    return engine.velocity
+    return _engine.velocity
+
+
+def step():
+    return _engine._motor_step
 
 
 def stop():
-    engine.stop()
-    print(f"velocity={engine.velocity:.2f} units/s")
+    _engine.stop()
+    print(f"velocity={_engine.velocity:.2f} units/s")
 
 
 def accelerate(direction):
     dir = 1 if direction == rel_dir.FORWARD else -1
-    a = 1 if abs(engine.velocity) >= 5 else 5
+    a = 1
     a *= dir
-    engine.accelerate(a)
+    _engine.accelerate(a)
 
-    print(f"velocity={engine.velocity:.2f} units/s")
+    print(f"velocity={_engine.velocity:.2f} units/s")
 
 
 def move(direction):
@@ -30,20 +42,20 @@ def move(direction):
     a = 0.2 * dir
     start_step = 2 * dir
 
-    engine.accelerate(start_step)
+    _engine.accelerate(start_step)
 
     for _ in range(60):
-        engine.accelerate(a)
+        _engine.accelerate(a)
         utime.sleep_ms(10)
 
-    print(f"velocity={engine.velocity:.2f} units/s")
+    print(f"velocity={_engine.velocity:.2f} units/s")
 
     # print("Coasting")
     # utime.sleep(0.5)
 
     # print("Stopping")
     # for _ in range(100):
-    #     engine.brake()
+    #     _engine.brake()
     #     utime.sleep_ms(10)
 
 
@@ -51,6 +63,6 @@ def move(direction):
 # utime.sleep(2)
 # move(dir.REVERSE)
 
-# engine._set_motor(dir.REVERSE, 10)
+# _engine._set_motor(dir.REVERSE, 10)
 # utime.sleep(0.5)
-# engine.stop()
+# _engine.stop()

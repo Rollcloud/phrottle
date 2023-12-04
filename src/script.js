@@ -30,12 +30,17 @@ const statusList = document.querySelector("#status-list");
 
 serverSocket.onopen = () => {
   send_message("ping", "");
+  send_message("init", "");
 };
 serverSocket.onmessage = (event) => {
   console.log(event.data);
   const message = JSON.parse(event.data);
   if (message["type"] == "pong") display_message("ready");
-  else if (message["type"] == "ack") {
+  else if (message["type"] == "init") {
+    display_message(message["text"]);
+    const maximum = Math.abs(message["maximum"]);
+    gauge.maxValue = maximum;
+  } else if (message["type"] == "ack") {
     display_message(message["text"]);
     const speed = Math.abs(message["velocity"]);
     gauge.set(speed);

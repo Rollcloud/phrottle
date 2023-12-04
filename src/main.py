@@ -62,6 +62,13 @@ async def move_ws(request, ws):
         message = json.loads(incoming)
         if message["type"] == "ping":
             reply = {"type": "pong", "date": time.time()}
+        elif message["type"] == "init":
+            reply = {
+                "type": "init",
+                "text": f"initialised with engine={throttle.engine_id()}",
+                "date": time.time(),
+                "maximum": throttle.profile().get("max_speed", 100),
+            }
         elif message["type"] == "stop":
             throttle.stop()
             reply = {
@@ -69,6 +76,7 @@ async def move_ws(request, ws):
                 "text": f"commanded: stop",
                 "date": time.time(),
                 "velocity": throttle.velocity(),
+                "step": throttle.step(),
             }
         elif message["type"] == "move":
             direction_in = message["text"]
@@ -89,6 +97,7 @@ async def move_ws(request, ws):
                 "text": f"commanded: accelerate {direction_in}",
                 "date": time.time(),
                 "velocity": throttle.velocity(),
+                "step": throttle.step(),
             }
         else:
             # echo message
