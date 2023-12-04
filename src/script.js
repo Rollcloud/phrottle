@@ -35,7 +35,11 @@ serverSocket.onmessage = (event) => {
   console.log(event.data);
   const message = JSON.parse(event.data);
   if (message["type"] == "pong") display_message("ready");
-  else if (message["type"] == "ack") display_message(message["text"]);
+  else if (message["type"] == "ack") {
+    display_message(message["text"]);
+    const speed = Math.abs(message["velocity"]);
+    gauge.set(speed);
+  }
 };
 
 let moveLeftBtn = document.querySelector("#move-left");
@@ -118,3 +122,33 @@ window.addEventListener(
   },
   true
 );
+
+// add gauge: https://bernii.github.io/gauge.js
+var opts = {
+  angle: 0, // The span of the gauge arc
+  lineWidth: 0.2, // The line thickness
+  radiusScale: 0.5, // Relative radius
+  pointer: {
+    length: 0.6, // // Relative to gauge radius
+    strokeWidth: 0.03, // The thickness
+    color: "#8d0000", // Fill color
+  },
+  limitMax: true, // If false, max value increases automatically if value > maxValue
+  limitMin: false, // If true, the min value of the gauge will be fixed
+  // colorStart: "#6FADCF", // Colors
+  // colorStop: "#8FC0DA", // just experiment with them
+  // strokeColor: "#E0E0E0", // to see which ones work best for you
+  generateGradient: false,
+  highDpiSupport: true, // High resolution support
+  staticZones: [
+    { strokeStyle: "#E0E0E0", min: 0, max: 80 }, // White
+    { strokeStyle: "#c99800", min: 80, max: 95 }, // Yellow
+    { strokeStyle: "#570606", min: 95, max: 100 }, // Red
+  ],
+};
+var target = document.getElementById("speedometer"); // your canvas element
+var gauge = new Gauge(target).setOptions(opts); // create sexy gauge!
+gauge.maxValue = 100; // set max gauge value
+gauge.setMinValue(0); // Prefer setter over gauge.minValue = 0
+gauge.animationSpeed = 32; // set animation speed (32 is default value)
+gauge.set(0);

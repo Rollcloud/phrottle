@@ -66,8 +66,9 @@ async def move_ws(request, ws):
             throttle.stop()
             reply = {
                 "type": "ack",
-                "text": f"commanded: {throttle.velocity()}",
+                "text": f"commanded: stop",
                 "date": time.time(),
+                "velocity": throttle.velocity(),
             }
         elif message["type"] == "move":
             direction_in = message["text"]
@@ -85,8 +86,9 @@ async def move_ws(request, ws):
             throttle.accelerate(direction)
             reply = {
                 "type": "ack",
-                "text": f"commanded: {throttle.velocity()}",
+                "text": f"commanded: accelerate {direction_in}",
                 "date": time.time(),
+                "velocity": throttle.velocity(),
             }
         else:
             # echo message
