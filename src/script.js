@@ -39,11 +39,14 @@ serverSocket.onmessage = (event) => {
   else if (message["type"] == "init") {
     display_message(message["text"]);
     const maximum = Math.abs(message["maximum"]);
-    gauge.maxValue = maximum;
+    gauge.update({
+      maxValue: maximum,
+    });
+    setTicks(maximum);
   } else if (message["type"] == "ack") {
     display_message(message["text"]);
     const speed = Math.abs(message["velocity"]);
-    gauge.set(speed);
+    gauge.value = speed;
   }
 };
 
@@ -128,32 +131,34 @@ window.addEventListener(
   true
 );
 
-// add gauge: https://bernii.github.io/gauge.js
-var opts = {
-  angle: 0, // The span of the gauge arc
-  lineWidth: 0.2, // The line thickness
-  radiusScale: 0.5, // Relative radius
-  pointer: {
-    length: 0.6, // // Relative to gauge radius
-    strokeWidth: 0.03, // The thickness
-    color: "#8d0000", // Fill color
-  },
-  limitMax: true, // If false, max value increases automatically if value > maxValue
-  limitMin: false, // If true, the min value of the gauge will be fixed
-  // colorStart: "#6FADCF", // Colors
-  // colorStop: "#8FC0DA", // just experiment with them
-  // strokeColor: "#E0E0E0", // to see which ones work best for you
-  generateGradient: false,
-  highDpiSupport: true, // High resolution support
-  staticZones: [
-    { strokeStyle: "#E0E0E0", min: 0, max: 80 }, // White
-    { strokeStyle: "#c99800", min: 80, max: 95 }, // Yellow
-    { strokeStyle: "#570606", min: 95, max: 100 }, // Red
-  ],
+// add gauge: http://canvas-gauges.com/
+var gauge = new RadialGauge({
+  renderTo: "speedometer",
+  units: "Speed",
+  minValue: 0,
+  maxValue: 100,
+  valueBox: false,
+  minorTicks: 10,
+  highlights: [],
+  strokeTicks: true,
+  colorPlate: "#fff",
+  colorNeedle: "#8d0000",
+  colorNeedleEnd: "#8d0000",
+  borderShadowWidth: 0,
+  borders: false,
+  needleType: "arrow",
+  needleCircleSize: 7,
+  needleCircleOuter: true,
+  needleCircleInner: false,
+  animationDuration: 200,
+  animationRule: "bounce",
+});
+
+const setTicks = (maxValue) => {
+  const majorTicks = Array.from({ length: maxValue / 10 + 1 }, (_, i) => i * 10);
+  gauge.update({
+    majorTicks: majorTicks,
+    highlights: [{ from: maxValue * 0.85, to: maxValue, color: "#c00000" }],
+  });
+  gauge.draw();
 };
-var target = document.getElementById("speedometer"); // your canvas element
-var gauge = new Gauge(target).setOptions(opts); // create sexy gauge!
-gauge.maxValue = 100; // set max gauge value
-gauge.setMinValue(0); // Prefer setter over gauge.minValue = 0
-gauge.animationSpeed = 32; // set animation speed (32 is default value)
-gauge.set(0);
