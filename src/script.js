@@ -65,13 +65,13 @@ const stop = () => {
 
 moveLeftBtn.addEventListener("touchstart", move_left);
 moveLeftBtn.addEventListener("mousedown", move_left);
-moveLeftBtn.addEventListener("touchend", stop);
-moveLeftBtn.addEventListener("mouseup", stop);
+// moveLeftBtn.addEventListener("touchend", stop);
+// moveLeftBtn.addEventListener("mouseup", stop);
 
 moveRightBtn.addEventListener("touchstart", move_right);
 moveRightBtn.addEventListener("mousedown", move_right);
-moveRightBtn.addEventListener("touchend", stop);
-moveRightBtn.addEventListener("mouseup", stop);
+// moveRightBtn.addEventListener("touchend", stop);
+// moveRightBtn.addEventListener("mouseup", stop);
 
 window.addEventListener(
   "keydown",
