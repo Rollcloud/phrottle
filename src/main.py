@@ -17,13 +17,12 @@ else:
     print("Using regulator control")
 
     engine = Locomotive(id="test", orientation=facing.LEFT)
-    throttle_split = 50
 
     def move_forwards(acceleration):
         engine.accelerate(acceleration)
 
     def move_reverse(acceleration):
-        engine.accelerate(acceleration)
+        engine.accelerate(-acceleration)
 
     def brake_forwards(acceleration):
         engine.brake(abs(acceleration))
@@ -34,14 +33,15 @@ else:
     def stop(acceleration):
         engine.stop()
 
+    throttle_split = 50
     state_machine = {
         # state: (callback, lt, lt_state, gt, gt_state)
         "move_forwards": (move_forwards, 50, "brake_forwards", 100, "move_forwards"),
-        "move_reverse": (move_reverse, 0, "move_reverse", 50, "brake_reverse"),
-        "brake_forwards": (brake_forwards, 10, "change_reverse", 50, "move_forwards"),
-        "brake_reverse": (brake_reverse, 50, "move_reverse", 90, "change_forwards"),
-        "change_forwards": (stop, 50, "brake_forwards", 100, "change_forwards"),
-        "change_reverse": (stop, 0, "change_reverse", 50, "brake_reverse"),
+        "move_reverse": (move_reverse, 50, "brake_reverse", 100, "move_reverse"),
+        "brake_forwards": (brake_forwards, 5, "change_reverse", 50, "move_forwards"),
+        "brake_reverse": (brake_reverse, 5, "change_forwards", 50, "move_reverse"),
+        "change_forwards": (stop, 0, "change_forwards", 5, "brake_forwards"),
+        "change_reverse": (stop, 0, "change_reverse", 5, "brake_reverse"),
     }
     state = "change_forwards"
 
@@ -65,7 +65,8 @@ else:
             state = run_state_machine(state, regulator_position, acceleration)
 
             print(
-                f"state={state}, throttle={throttle:.0f}, velocity={engine.velocity:.1f}", end="\r"
+                f"state={state}, throttle={throttle:.0f}, velocity={engine.velocity:.1f}",
+                end="    \r",
             )
 
             utime.sleep_ms(50)
