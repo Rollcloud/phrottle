@@ -26,7 +26,8 @@ TRACK_POLARITY = AbsoluteDirection.LEFT
 STEPS_PER_UNIT = 1
 
 LOCOMOTIVE_PROFILES = {
-    "lourie": {"start_step_forward": 7, "start_step_reverse": 8, "max_speed": 30}
+    "test": {"start_step_forward": 7, "start_step_reverse": 8, "max_speed": 12},
+    "lourie": {"start_step_forward": 7, "start_step_reverse": 8, "max_speed": 30},
 }
 
 
