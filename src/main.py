@@ -5,7 +5,7 @@ from layout import Locomotive
 from lever import Lever
 from hardware import click_speaker, init_speaker
 
-regulator = Lever(27, max_raw=362, max_out=100, filter_alpha=0.3)
+regulator = Lever(27, max_raw=385, max_out=100, filter_alpha=0.85)  # 362
 
 regulator_position = regulator.read()
 print(f"Regulator position: {regulator_position:.0f}%")
@@ -39,10 +39,10 @@ else:
         # state: (callback, lt, lt_state, gt, gt_state)
         "move_forwards": (move_forwards, 50, "brake_forwards", 100, "move_forwards"),
         "move_reverse": (move_reverse, 50, "brake_reverse", 100, "move_reverse"),
-        "brake_forwards": (brake_forwards, 5, "change_reverse", 50, "move_forwards"),
-        "brake_reverse": (brake_reverse, 5, "change_forwards", 50, "move_reverse"),
-        "change_forwards": (stop, 0, "change_forwards", 5, "brake_forwards"),
-        "change_reverse": (stop, 0, "change_reverse", 5, "brake_reverse"),
+        "brake_forwards": (brake_forwards, 3, "change_reverse", 50, "move_forwards"),
+        "brake_reverse": (brake_reverse, 3, "change_forwards", 50, "move_reverse"),
+        "change_forwards": (stop, 0, "change_forwards", 3, "brake_forwards"),
+        "change_reverse": (stop, 0, "change_reverse", 3, "brake_reverse"),
     }
     state = "change_forwards"
 
