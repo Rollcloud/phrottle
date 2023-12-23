@@ -11,6 +11,7 @@ CONVERSION_FACTOR = 3.3 / (65535)
 
 led = Pin("LED", Pin.OUT)
 motor = None
+speaker = None
 
 
 def flash_led(t: float = 0.12, n: int = 1):
@@ -56,3 +57,36 @@ def motor_off():
     if motor is None:
         raise Exception("Motor not initialised")
     motor.off()
+
+
+def init_speaker():
+    global speaker
+    speaker = Pin(6, Pin.OUT)
+
+
+def speaker_on():
+    global speaker
+    if speaker is None:
+        raise Exception("speaker not initialised")
+    speaker.on()
+
+
+def speaker_off():
+    global speaker
+    if speaker is None:
+        raise Exception("speaker not initialised")
+    speaker.off()
+
+
+def click_speaker(t: float = 0.12, n: int = 1):
+    """[Blocking] Click the speaker for t seconds n times."""
+    global speaker
+    if speaker is None:
+        raise Exception("speaker not initialised")
+    while n > 0:
+        speaker.on()
+        sleep_ms(int(t * 1000))
+        speaker.off()
+        if n > 1:
+            sleep_ms(int(t * 1000))
+        n -= 1

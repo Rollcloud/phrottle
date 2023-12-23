@@ -3,7 +3,7 @@ import utime
 from layout import AbsoluteDirection as facing
 from layout import Locomotive
 from lever import Lever
-from hardware import flash_led
+from hardware import click_speaker, init_speaker
 
 regulator = Lever(27, max_raw=362, max_out=100, filter_alpha=0.3)
 
@@ -16,6 +16,7 @@ if regulator_position > 50:
 else:
     print("Using regulator control")
 
+    init_speaker()
     engine = Locomotive(id="test", orientation=facing.LEFT)
 
     def move_forwards(acceleration):
@@ -45,14 +46,22 @@ else:
     }
     state = "change_forwards"
 
+    def herald_transition(new_state):
+        if "move" in new_state:
+            click_speaker(t=0.01, n=2)
+        elif "brake" in new_state:
+            click_speaker(t=0.02, n=2)
+        else:
+            click_speaker(t=0.01)
+
     def run_state_machine(state, regulator_position, acceleration):
         (callback, lt, lt_state, gt, gt_state) = state_machine[state]
         callback(acceleration)
         if regulator_position < lt:
-            flash_led()
+            herald_transition(lt_state)
             return lt_state
         if regulator_position > gt:
-            flash_led()
+            herald_transition(gt_state)
             return gt_state
         return state
 
