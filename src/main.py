@@ -3,7 +3,10 @@ import utime
 from layout import AbsoluteDirection as facing
 from layout import Locomotive
 from lever import Lever
-from hardware import click_speaker, init_speaker
+from hardware import click_speaker, init_speaker, led
+
+REG_MOVE = 70
+REG_BRAKE = 30
 
 regulator = Lever(27, max_raw=385, max_out=100, filter_alpha=0.85)  # 362
 
@@ -19,44 +22,54 @@ else:
     init_speaker()
     engine = Locomotive(id="test", orientation=facing.LEFT)
 
-    def move_forwards(acceleration):
+    def move_forwards(regulator_position):
+        acceleration = (regulator_position - REG_MOVE) / 200
         engine.accelerate(acceleration)
 
-    def move_reverse(acceleration):
+    def move_reverse(regulator_position):
+        acceleration = (regulator_position - REG_MOVE) / 200
         engine.accelerate(-acceleration)
 
-    def brake_forwards(acceleration):
+    def coast_forwards(regulator_position):
+        engine.brake(0.01)
+
+    def coast_reverse(regulator_position):
+        engine.brake(0.01)
+
+    def brake_forwards(regulator_position):
+        acceleration = (regulator_position - REG_BRAKE) / 150
         engine.brake(abs(acceleration))
 
-    def brake_reverse(acceleration):
+    def brake_reverse(regulator_position):
+        acceleration = (regulator_position - REG_BRAKE) / 150
         engine.brake(abs(acceleration))
 
-    def stop(acceleration):
+    def stop(regulator_position):
         engine.stop()
 
-    throttle_split = 50
     state_machine = {
         # state: (callback, lt, lt_state, gt, gt_state)
-        "move_forwards": (move_forwards, 50, "brake_forwards", 100, "move_forwards"),
-        "move_reverse": (move_reverse, 50, "brake_reverse", 100, "move_reverse"),
-        "brake_forwards": (brake_forwards, 3, "change_reverse", 50, "move_forwards"),
-        "brake_reverse": (brake_reverse, 3, "change_forwards", 50, "move_reverse"),
-        "change_forwards": (stop, 0, "change_forwards", 3, "brake_forwards"),
-        "change_reverse": (stop, 0, "change_reverse", 3, "brake_reverse"),
+        "move_forwards": (move_forwards, REG_MOVE, "coast_forwards", 100, "move_forwards"),
+        "move_reverse": (move_reverse, REG_MOVE, "coast_reverse", 100, "move_reverse"),
+        "coast_forwards": (coast_forwards, REG_BRAKE, "brake_forwards", REG_MOVE, "move_forwards"),
+        "coast_reverse": (coast_reverse, REG_BRAKE, "brake_reverse", REG_MOVE, "move_reverse"),
+        "brake_forwards": (brake_forwards, 3, "change_reverse", REG_BRAKE, "coast_forwards"),
+        "brake_reverse": (brake_reverse, 3, "change_forwards", REG_BRAKE, "coast_reverse"),
+        "change_forwards": (stop, 0, "change_forwards", 5, "brake_forwards"),
+        "change_reverse": (stop, 0, "change_reverse", 5, "brake_reverse"),
     }
     state = "change_forwards"
 
     def herald_transition(new_state):
         if "move" in new_state:
-            click_speaker(t=0.01, n=2)
-        elif "brake" in new_state:
-            click_speaker(t=0.02, n=2)
+            led.on()
         else:
-            click_speaker(t=0.01)
+            led.off()
+        click_speaker(t=0.01)
 
-    def run_state_machine(state, regulator_position, acceleration):
+    def run_state_machine(state, regulator_position):
         (callback, lt, lt_state, gt, gt_state) = state_machine[state]
-        callback(acceleration)
+        callback(regulator_position)
         if regulator_position < lt:
             herald_transition(lt_state)
             return lt_state
@@ -68,13 +81,11 @@ else:
     try:
         while True:
             regulator_position = regulator.read()
-            throttle = regulator_position - throttle_split
-            acceleration = throttle / 200
 
-            state = run_state_machine(state, regulator_position, acceleration)
+            state = run_state_machine(state, regulator_position)
 
             print(
-                f"state={state}, throttle={throttle:.0f}, velocity={engine.velocity:.1f}",
+                f"state={state}, regulator={regulator_position:.0f}, velocity={engine.velocity:.1f}",
                 end="    \r",
             )
 
