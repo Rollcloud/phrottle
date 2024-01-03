@@ -3,8 +3,7 @@ import utime
 
 
 class RcDetector:
-    def calibrate(self, *args):
-        # args provided for callback use
+    def calibrate(self):
         try:
             self.calibration = self._sense_time
         except AttributeError:
@@ -33,23 +32,30 @@ class RcDetector:
         self.read_taken = True
 
     def __init__(self, pin_number, threshold_us=30, filter_alpha=0.0) -> None:
-        """Initialise an RC detector connected to the provided pin"""
+        """
+        Initialise an RC detector connected to the provided pin.
+
+        filter_alpha [0.0, 1.0]: lower is stronger
+        """
         self._pin_number = pin_number
         self._filter_alpha = filter_alpha
         self._sensor = Pin(pin_number, Pin.IN)
 
         self.threshold_us = threshold_us
         self.read_taken = False
-        self.calibration = 0  # us
+        self.calibration: float = 0  # us
         # Measure the time for the voltage to decay by waiting for the I/O line to go low.
         self._sensor.irq(handler=self._stop_read, trigger=Pin.IRQ_FALLING)
+
+    def is_calibrated(self) -> bool:
+        return self.calibration != 0
 
     def perform_read(self) -> None:
         """Take a new reading."""
         # Set the I/O line to an output and drive it high.
         self._sensor.init(mode=Pin.OUT, value=1)
         # Allow at least 10 μs for the sensor output to rise.
-        utime.sleep_us(15)
+        utime.sleep_us(50)
         # Make the I/O line an input (high impedance).
         self._sensor.init(mode=Pin.IN)
         self._start_time = utime.ticks_us()
@@ -73,15 +79,31 @@ class RcDetector:
 
 
 if __name__ == "__main__":
-    LOW_FREQUENCY_PERIOD_MS = 100
-    SENSORS_PERIOD_MS = 5
+
+    class Scheduler:
+        def __init__(self, period) -> None:
+            self.period = period
+
+            ticks_ms = utime.ticks_ms()
+            self._deadline = utime.ticks_add(ticks_ms, self.period)
+            self._last = ticks_ms
+
+        def is_ready(self):
+            ticks_ms = utime.ticks_ms()
+            is_ready = utime.ticks_diff(self._deadline, ticks_ms) <= 0
+            if is_ready:
+                self.delta = utime.ticks_diff(ticks_ms, self._last)
+                self._last = ticks_ms
+                self._deadline = utime.ticks_add(ticks_ms, self.period)
+            return is_ready
+
+    LOW_FREQUENCY_PERIOD_MS = 31
+    SENSORS_PERIOD_MS = 3
 
     up_time = 0  # ms
-    is_lf_loop_ready = False
-    is_sensors_loop_ready = False
 
     led = Pin("LED", Pin.OUT)
-    detector = RcDetector(26, threshold_us=5, filter_alpha=0.05)
+    detector = RcDetector(26, threshold_us=10, filter_alpha=0.1)
 
     def pos(value, scale, zero):
         pos = (value - zero) * scale
@@ -92,25 +114,19 @@ if __name__ == "__main__":
         ruler_pos = [pos(value, scale, zero) for value in rulers]
         graph = [" "] * width
         for idx in ruler_pos:
-            try:
-                graph[idx] = "|"
-            except IndexError as err:
-                print(f"Ruler position {idx} is not <= {width}")
-                raise err
-        try:
-            graph[value_pos] = "*"
-        except IndexError as err:
-            print(f"Value position {value_pos} is not <= {width}")
-            raise err
+            idx = min(width - 1, max(idx, 0))
+            graph[idx] = "|"
+        value_pos = min(width - 1, max(value_pos, 0))
+        graph[value_pos] = "*"
         return "".join(graph)
 
     def print_feedback():
         global detector
-        present = detector.is_present()
-        icon = "|" if present else "-"  # if detector.read_taken else "X"
+        icon = "+" if detector.is_present() else "-"
         graph = draw_graph(
             detector.value(),
-            scale=0.05,
+            zero=int(detector.calibration - 150),
+            scale=0.3,
             rulers=[detector.calibration - detector.threshold_us],
         )
         print(f"{detector.calibration/1000:.3f} {detector.value()/1000: 4.3f} ms {icon}{graph}")
@@ -123,39 +139,25 @@ if __name__ == "__main__":
 
     def low_frequency_loop(ticks_delta):
         global up_time, detector
-
         up_time += ticks_delta
-
-        if up_time >= 2000 and detector.calibration == 0.0:  # ms
-            detector.calibrate()
-
         print_feedback()
-        # print(up_time)
+
+    sensors_scheduler = Scheduler(SENSORS_PERIOD_MS)
+    lf_scheduler = Scheduler(LOW_FREQUENCY_PERIOD_MS)
+    calibration_scheduler = Scheduler(3000)
 
     try:
-        ticks_last = utime.ticks_ms()
-        sensors_loop_deadline = ticks_last
-        lf_loop_deadline = ticks_last
         while True:
-            ticks_ms = utime.ticks_ms()
-
-            if utime.ticks_diff(sensors_loop_deadline, ticks_ms) < 0:
-                is_sensors_loop_ready = True
-
-            if utime.ticks_diff(lf_loop_deadline, ticks_ms) < 0:
-                is_lf_loop_ready = True
-
-            if is_sensors_loop_ready:
+            if sensors_scheduler.is_ready():
                 sensors_loop()
-                is_sensors_loop_ready = False
-                sensors_loop_deadline = utime.ticks_add(ticks_ms, SENSORS_PERIOD_MS)
 
-            if is_lf_loop_ready:
-                ticks_delta = utime.ticks_diff(ticks_ms, ticks_last)
-                ticks_last = ticks_ms
-                low_frequency_loop(ticks_delta)
-                is_lf_loop_ready = False
-                lf_loop_deadline = utime.ticks_add(ticks_ms, LOW_FREQUENCY_PERIOD_MS)
+            if lf_scheduler.is_ready():
+                low_frequency_loop(lf_scheduler.delta)
+
+            if detector.is_calibrated() is False and calibration_scheduler.is_ready():
+                detector.calibrate()
 
     except KeyboardInterrupt:
         print("Keyboard exit detected")
+    finally:
+        led.off()
