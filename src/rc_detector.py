@@ -1,4 +1,4 @@
-from machine import Pin, Timer
+from machine import Pin
 import utime
 
 
@@ -74,6 +74,7 @@ class RcDetector:
 
 if __name__ == "__main__":
     LOW_FREQUENCY_PERIOD_MS = 100
+    SENSORS_PERIOD_MS = 5
 
     up_time = 0  # ms
     is_lf_loop_ready = False
@@ -106,30 +107,13 @@ if __name__ == "__main__":
     def print_feedback():
         global detector
         present = detector.is_present()
-        icon = "|" if present else "-" if detector.read_taken else "X"
+        icon = "|" if present else "-"  # if detector.read_taken else "X"
         graph = draw_graph(
             detector.value(),
-            scale=0.01,
+            scale=0.05,
             rulers=[detector.calibration - detector.threshold_us],
         )
         print(f"{detector.calibration/1000:.3f} {detector.value()/1000: 4.3f} ms {icon}{graph}")
-
-    def low_frequency_callback(_timer):
-        global is_lf_loop_ready, up_time
-        up_time += LOW_FREQUENCY_PERIOD_MS
-        is_lf_loop_ready = True
-
-    def sensors_callback(_timer):
-        global is_sensors_loop_ready
-        is_sensors_loop_ready = True
-
-    sensor_timer = Timer()
-    sensor_timer.init(mode=Timer.PERIODIC, period=2, callback=sensors_callback)
-
-    lf_timer = Timer()
-    lf_timer.init(
-        mode=Timer.PERIODIC, period=LOW_FREQUENCY_PERIOD_MS, callback=low_frequency_callback
-    )
 
     def sensors_loop():
         global detector
@@ -137,26 +121,41 @@ if __name__ == "__main__":
         led.value(present)
         detector.perform_read()
 
-    def low_frequency_loop():
+    def low_frequency_loop(ticks_delta):
         global up_time, detector
 
-        if up_time == 2000:  # ms
+        up_time += ticks_delta
+
+        if up_time >= 2000 and detector.calibration == 0.0:  # ms
             detector.calibrate()
 
         print_feedback()
+        # print(up_time)
 
     try:
+        ticks_last = utime.ticks_ms()
+        sensors_loop_deadline = ticks_last
+        lf_loop_deadline = ticks_last
         while True:
+            ticks_ms = utime.ticks_ms()
+
+            if utime.ticks_diff(sensors_loop_deadline, ticks_ms) < 0:
+                is_sensors_loop_ready = True
+
+            if utime.ticks_diff(lf_loop_deadline, ticks_ms) < 0:
+                is_lf_loop_ready = True
+
             if is_sensors_loop_ready:
                 sensors_loop()
                 is_sensors_loop_ready = False
+                sensors_loop_deadline = utime.ticks_add(ticks_ms, SENSORS_PERIOD_MS)
 
             if is_lf_loop_ready:
-                low_frequency_loop()
+                ticks_delta = utime.ticks_diff(ticks_ms, ticks_last)
+                ticks_last = ticks_ms
+                low_frequency_loop(ticks_delta)
                 is_lf_loop_ready = False
+                lf_loop_deadline = utime.ticks_add(ticks_ms, LOW_FREQUENCY_PERIOD_MS)
 
     except KeyboardInterrupt:
         print("Keyboard exit detected")
-
-    sensor_timer.deinit()
-    lf_timer.deinit()
