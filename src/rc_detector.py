@@ -46,18 +46,14 @@ class RcDetector:
 
     def perform_read(self) -> None:
         """Take a new reading."""
-        print("(", end="")
         # Set the I/O line to an output and drive it high.
         self._sensor.init(mode=Pin.OUT, value=1)
         # Allow at least 10 μs for the sensor output to rise.
-        print("|", end="")
         utime.sleep_us(15)
-        print("/", end="")
         # Make the I/O line an input (high impedance).
         self._sensor.init(mode=Pin.IN)
         self._start_time = utime.ticks_us()
         self.read_taken = False
-        print(")", end="")
 
     def value(self) -> float:
         """Return the detector value in us or zero if no value present."""
@@ -128,17 +124,17 @@ if __name__ == "__main__":
         is_sensors_loop_ready = True
 
     sensor_timer = Timer()
-    sensor_timer.init(mode=Timer.PERIODIC, period=200, callback=sensors_callback)
+    sensor_timer.init(mode=Timer.PERIODIC, period=2, callback=sensors_callback)
 
-    # lf_timer = Timer()
-    # lf_timer.init(
-    #     mode=Timer.PERIODIC, period=LOW_FREQUENCY_PERIOD_MS, callback=low_frequency_callback
-    # )
+    lf_timer = Timer()
+    lf_timer.init(
+        mode=Timer.PERIODIC, period=LOW_FREQUENCY_PERIOD_MS, callback=low_frequency_callback
+    )
 
     def sensors_loop():
         global detector
-        # present = detector.is_present()
-        # led.value(present)
+        present = detector.is_present()
+        led.value(present)
         detector.perform_read()
 
     def low_frequency_loop():
@@ -152,19 +148,15 @@ if __name__ == "__main__":
     try:
         while True:
             if is_sensors_loop_ready:
-                print("{", end="")
                 sensors_loop()
-                print("}", end="")
                 is_sensors_loop_ready = False
 
             if is_lf_loop_ready:
                 low_frequency_loop()
                 is_lf_loop_ready = False
 
-            # print(".", end="")
-
     except KeyboardInterrupt:
         print("Keyboard exit detected")
 
     sensor_timer.deinit()
-    # lf_timer.deinit()
+    lf_timer.deinit()
