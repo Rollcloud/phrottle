@@ -3,12 +3,12 @@ import utime
 
 
 class RcDetector:
+    MAX_SENSE_TIME = 20 * 10**3  # us
+
     def calibrate(self):
-        try:
-            self.calibration = self._sense_time
-        except AttributeError:
-            #'RcDetector' object has no attribute '_sense_time'
-            pass
+        if self.value() < RcDetector.MAX_SENSE_TIME:
+            self.calibration = self.value()
+            self.calibrated = True
 
     def _filter(self, x) -> float:
         """
@@ -29,7 +29,7 @@ class RcDetector:
         self._stop_time = utime.ticks_us()
         self._sense_time = utime.ticks_diff(self._stop_time, self._start_time)
         self._sense_time = self._filter(self._sense_time)
-        self.read_taken = True
+        self.read_valid = True
 
     def __init__(self, pin_number, threshold_us=30, filter_alpha=0.0) -> None:
         """
@@ -42,36 +42,40 @@ class RcDetector:
         self._sensor = Pin(pin_number, Pin.IN)
 
         self.threshold_us = threshold_us
-        self.read_taken = False
-        self.calibration: float = 0  # us
+        self.read_valid = False
+        self.calibrated = False
+        self.calibration: float = RcDetector.MAX_SENSE_TIME  # us
         # Measure the time for the voltage to decay by waiting for the I/O line to go low.
         self._sensor.irq(handler=self._stop_read, trigger=Pin.IRQ_FALLING)
-
-    def is_calibrated(self) -> bool:
-        return self.calibration != 0
 
     def perform_read(self) -> None:
         """Take a new reading."""
         # Set the I/O line to an output and drive it high.
         self._sensor.init(mode=Pin.OUT, value=1)
         # Allow at least 10 μs for the sensor output to rise.
-        utime.sleep_us(50)
+        utime.sleep_us(10)
         # Make the I/O line an input (high impedance).
         self._sensor.init(mode=Pin.IN)
         self._start_time = utime.ticks_us()
-        self.read_taken = False
+        self.read_valid = False
 
     def value(self) -> float:
-        """Return the detector value in us or zero if no value present."""
+        """Return the detector value in us or MAX_SENSE_TIME if no value present."""
+        if self.read_valid is False:
+            return RcDetector.MAX_SENSE_TIME
         try:
             return self._sense_time
         except AttributeError:
-            return 0.0
+            #'RcDetector' object has no attribute '_sense_time'
+            return RcDetector.MAX_SENSE_TIME
 
     def is_present(self) -> bool:
         """Return whether an object is present."""
+        if self.read_valid is False:
+            return False
+
         try:
-            present = self._sense_time <= self.calibration - self.threshold_us
+            present = self._sense_time < self.calibration - self.threshold_us
             return present
         except AttributeError:
             #'RcDetector' object has no attribute '_sense_time'
@@ -81,29 +85,38 @@ class RcDetector:
 if __name__ == "__main__":
 
     class Scheduler:
-        def __init__(self, period) -> None:
+        def __init__(self, period, one_shot=False) -> None:
             self.period = period
+            self.one_shot = one_shot
+            self.active = True
 
             ticks_ms = utime.ticks_ms()
             self._deadline = utime.ticks_add(ticks_ms, self.period)
             self._last = ticks_ms
 
         def is_ready(self):
+            if self.active is False:
+                return False
+
             ticks_ms = utime.ticks_ms()
             is_ready = utime.ticks_diff(self._deadline, ticks_ms) <= 0
             if is_ready:
                 self.delta = utime.ticks_diff(ticks_ms, self._last)
                 self._last = ticks_ms
                 self._deadline = utime.ticks_add(ticks_ms, self.period)
+                if self.one_shot:
+                    self.active = False
             return is_ready
 
-    LOW_FREQUENCY_PERIOD_MS = 31
-    SENSORS_PERIOD_MS = 3
+    LOW_FREQUENCY_PERIOD_MS = 100
+    SENSORS_PERIOD_MS = RcDetector.MAX_SENSE_TIME // 1000
 
     up_time = 0  # ms
 
+    # detectors at 21, 26
+
     led = Pin("LED", Pin.OUT)
-    detector = RcDetector(26, threshold_us=10, filter_alpha=0.1)
+    detector = RcDetector(21, threshold_us=5 * 10**3, filter_alpha=0.1)
 
     def pos(value, scale, zero):
         pos = (value - zero) * scale
@@ -125,11 +138,11 @@ if __name__ == "__main__":
         icon = "+" if detector.is_present() else "-"
         graph = draw_graph(
             detector.value(),
-            zero=int(detector.calibration - 150),
-            scale=0.3,
+            # zero=int(detector.calibration - 150),
+            scale=0.001,
             rulers=[detector.calibration - detector.threshold_us],
         )
-        print(f"{detector.calibration/1000:.3f} {detector.value()/1000: 4.3f} ms {icon}{graph}")
+        print(f"{detector.calibration/1000: 6.3f} {detector.value()/1000: 6.3f} ms {icon}{graph}")
 
     def sensors_loop():
         global detector
@@ -144,7 +157,7 @@ if __name__ == "__main__":
 
     sensors_scheduler = Scheduler(SENSORS_PERIOD_MS)
     lf_scheduler = Scheduler(LOW_FREQUENCY_PERIOD_MS)
-    calibration_scheduler = Scheduler(3000)
+    # calibration_scheduler = Scheduler(3000, one_shot=True)
 
     try:
         while True:
@@ -154,8 +167,8 @@ if __name__ == "__main__":
             if lf_scheduler.is_ready():
                 low_frequency_loop(lf_scheduler.delta)
 
-            if detector.is_calibrated() is False and calibration_scheduler.is_ready():
-                detector.calibrate()
+            # if calibration_scheduler.is_ready():
+            #     detector.calibrate()
 
     except KeyboardInterrupt:
         print("Keyboard exit detected")
