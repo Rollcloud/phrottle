@@ -1,7 +1,7 @@
 import json
-import network
 import time
 
+import network
 
 WIFICONFIGFILE = "/.wifi/connections.json"
 

@@ -1,9 +1,9 @@
 import utime
 
+from hardware import click_speaker, init_speaker, led
 from layout import AbsoluteDirection as facing
 from layout import Locomotive
 from lever import Lever
-from hardware import click_speaker, init_speaker, led
 
 REG_MOVE = 70
 REG_BRAKE = 30

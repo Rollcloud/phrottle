@@ -1,12 +1,12 @@
 import json
 import time
 
+import wifi
 from microdot_asyncio import Microdot, send_file
 from microdot_asyncio_websocket import with_websocket
 
 import hardware
 import throttle
-import wifi
 from layout import RelativeDirection
 
 ONE_HOUR_IN_SECONDS = 60 * 60
