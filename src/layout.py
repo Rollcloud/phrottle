@@ -103,11 +103,11 @@ class Locomotive:
         speed = self._speed()
         if amount >= speed:
             self.velocity = 0
-            return
-        speed -= amount
-        self.velocity = speed * (
-            1 if self._velocity_direction() == RelativeDirection.FORWARD else -1
-        )
+        else:
+            speed -= amount
+            self.velocity = speed * (
+                1 if self._velocity_direction() == RelativeDirection.FORWARD else -1
+            )
         self._set_motor_step()
 
     class Evaluator:

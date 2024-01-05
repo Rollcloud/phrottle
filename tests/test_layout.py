@@ -78,3 +78,16 @@ class TestLocomotive:
             locomotive.accelerate(acceleration)
         assert locomotive.velocity == expected_velocity
         mock_set_motor_step.assert_called()
+
+    def test_brake(self, locomotive: Locomotive):
+        locomotive.velocity = 0.13
+
+        with patch.object(layout.Locomotive, "_set_motor_step") as mock_set_motor_step:
+            locomotive.brake(0.1)
+        assert locomotive.velocity == 0.03
+        mock_set_motor_step.assert_called()
+
+        with patch.object(layout.Locomotive, "_set_motor_step") as mock_set_motor_step:
+            locomotive.brake(0.1)
+        assert locomotive.velocity == 0.00
+        mock_set_motor_step.assert_called()
