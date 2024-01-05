@@ -28,7 +28,7 @@ class Events:
 
 
 def home_stop():
-    engine.brake(0.75)
+    engine.brake(1.5)
 
 
 def home_ready():
@@ -85,7 +85,7 @@ def run_state_machine(state):
 def sensors_loop():
     global detector
     present = detector.is_present()
-    led.value(present)
+    led.value(1 if present else 0)
     detector.perform_read()
 
 
