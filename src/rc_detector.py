@@ -4,6 +4,8 @@ from machine import Pin
 
 class RcDetector:
     MAX_SENSE_TIME = 20 * 10**3  # us
+    RISING_DEBOUNCE = 30 * MAX_SENSE_TIME  # us - min length of train
+    FALLING_DEBOUNCE = 10 * MAX_SENSE_TIME  # us - min length of gap
 
     def calibrate(self):
         if self.value() < RcDetector.MAX_SENSE_TIME:
@@ -40,9 +42,14 @@ class RcDetector:
         self._pin_number = pin_number
         self._filter_alpha = filter_alpha
         self._sensor = Pin(pin_number, Pin.IN)
+        self._rising_callback = None
+        self._falling_callback = None
+        self._debounce_ticks = utime.ticks_add(utime.ticks_us(), 0)
 
         self.threshold_us = threshold_us
-        self.last_present = False  # convenience attribute, designed to be set from the calling code
+        self._last_present = (
+            False  # convenience attribute, designed to be set from the calling code
+        )
         self.read_valid = False
         self.calibrated = False
         self.calibration: float = RcDetector.MAX_SENSE_TIME  # us
@@ -50,7 +57,24 @@ class RcDetector:
         self._sensor.irq(handler=self._stop_read, trigger=Pin.IRQ_FALLING)
 
     def perform_read(self) -> None:
-        """Take a new reading."""
+        """Execute callbacks and take a new reading."""
+        # Callbacks and debouncing
+        present = self.is_present()
+        ticks = utime.ticks_us()
+        debounce_ticks = utime.ticks_diff(self._debounce_ticks, ticks)
+
+        if present and not self._last_present and debounce_ticks <= 0:
+            if self._rising_callback:
+                self._rising_callback()
+            self._debounce_ticks = utime.ticks_add(ticks, RcDetector.RISING_DEBOUNCE)
+            self._last_present = present
+
+        if not present and self._last_present and debounce_ticks <= 0:
+            if self._falling_callback:
+                self._falling_callback()
+            self._debounce_ticks = utime.ticks_add(ticks, RcDetector.FALLING_DEBOUNCE)
+            self._last_present = present
+
         # Set the I/O line to an output and drive it high.
         self._sensor.init(mode=Pin.OUT, value=1)
         # Allow at least 10 μs for the sensor output to rise.
@@ -81,6 +105,12 @@ class RcDetector:
         except AttributeError:
             #'RcDetector' object has no attribute '_sense_time'
             return False
+
+    def register_rising_callback(self, callback):
+        self._rising_callback = callback
+
+    def register_falling_callback(self, callback):
+        self._falling_callback = callback
 
 
 if __name__ == "__main__":
@@ -118,6 +148,11 @@ if __name__ == "__main__":
 
     led = Pin("LED", Pin.OUT)
     detector = RcDetector(21, threshold_us=5 * 10**3, filter_alpha=0.1)
+
+    def callback():
+        print("Called.")
+
+    detector.register_rising_callback(callback)
 
     def pos(value, scale, zero):
         pos = (value - zero) * scale

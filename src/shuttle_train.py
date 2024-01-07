@@ -16,6 +16,14 @@ track_end_evaluator = Evaluator("track_end")
 train_detector = TrainDetector("track_end")
 train_detector.register_evaluators(None, track_end_evaluator)
 
+
+def detector_callback():
+    train_detector.trigger(engine.movement_direction())
+
+
+detector.register_rising_callback(detector_callback)
+detector.register_falling_callback(detector_callback)
+
 engine = Locomotive(id="test", orientation=facing.LEFT)
 engine.profile["max_speed"] = 4  # set really slow for shuttle tests
 
@@ -90,12 +98,6 @@ def sensors_loop():
     global detector
     present = detector.is_present()
     led.value(1 if present else 0)
-
-    if detector.last_present != present:
-        train_detector.trigger(engine.movement_direction())
-
-    detector.last_present = present
-
     detector.perform_read()
 
 
