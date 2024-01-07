@@ -125,41 +125,46 @@ class Locomotive:
             )
         self._set_motor_step()
 
-    class Evaluator:
-        """A piece of railway bordered at each ingress by Train Detectors."""
 
-        def __init__(self, name) -> None:
-            self.name = name
-            self.count = 0
+class Evaluator:
+    """A piece of railway bordered at each ingress by Train Detectors."""
 
-        def add_count(self, amount: float):
-            """
-            Increment count of passing train cars.
+    def __init__(self, name) -> None:
+        self.name = name
+        self.count = 0
 
-            An amount of 0.5 can indicate a car occupying two evaluators simultaneously.
-            """
-            self.count += amount
-            if self.count < 0:
-                print(f"WARNING: Evaluator {self.name} has a negative count of {self.count}")
+    def add_count(self, amount: float):
+        """
+        Increment count of passing train cars.
 
-    class TrainDetector:
-        """A simple detector to count passing train cars."""
+        An amount of 0.5 can indicate a car occupying two evaluators simultaneously.
+        """
+        self.count += amount
+        if self.count < 0:
+            print(f"WARNING: Evaluator {self.name} has a negative count of {self.count}")
 
-        def __init__(self, name) -> None:
-            self.name = name
-            self.evaluator_left = None
-            self.evaluator_right = None
+        print(f"Evaluator {self.name} count: {self.count}")
 
-        def register_evaluators(self, evaluator_left, evaluator_right):
-            self.evaluator_left = evaluator_left
-            self.evaluator_right = evaluator_right
 
-        def trigger(self, absolute_direction):
-            # left is positive
-            amount = 0.5
-            if absolute_direction == AbsoluteDirection.RIGHT:
-                amount *= -1
-            if self.evaluator_left:
-                self.evaluator_left.add_count(amount)
-            if self.evaluator_right:
-                self.evaluator_right.add_count(-amount)
+class TrainDetector:
+    """A simple detector to count passing train cars."""
+
+    def __init__(self, name) -> None:
+        self.name = name
+        self.evaluator_left = None
+        self.evaluator_right = None
+
+    def register_evaluators(self, evaluator_left, evaluator_right):
+        self.evaluator_left = evaluator_left
+        self.evaluator_right = evaluator_right
+
+    def trigger(self, absolute_direction):
+        """Call this function with a direction on a detector changing level."""
+        # left is positive
+        amount = 0.5
+        if absolute_direction == AbsoluteDirection.RIGHT:
+            amount *= -1
+        if self.evaluator_left:
+            self.evaluator_left.add_count(amount)
+        if self.evaluator_right:
+            self.evaluator_right.add_count(-amount)

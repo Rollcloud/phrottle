@@ -1,7 +1,7 @@
 from machine import Pin
 
 from layout import AbsoluteDirection as facing
-from layout import Locomotive
+from layout import Evaluator, Locomotive, TrainDetector
 from rc_detector import RcDetector
 from scheduler import Scheduler
 
@@ -12,6 +12,10 @@ up_time = 0  # ms
 
 led = Pin("LED", Pin.OUT)
 detector = RcDetector(21, threshold_us=5 * 10**3, filter_alpha=0.1)
+track_end_evaluator = Evaluator("track_end")
+train_detector = TrainDetector("track_end")
+train_detector.register_evaluators(None, track_end_evaluator)
+
 engine = Locomotive(id="test", orientation=facing.LEFT)
 engine.profile["max_speed"] = 4  # set really slow for shuttle tests
 
@@ -86,6 +90,12 @@ def sensors_loop():
     global detector
     present = detector.is_present()
     led.value(1 if present else 0)
+
+    if detector.last_present != present:
+        train_detector.trigger(engine.movement_direction())
+
+    detector.last_present = present
+
     detector.perform_read()
 
 

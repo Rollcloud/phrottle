@@ -42,6 +42,7 @@ class RcDetector:
         self._sensor = Pin(pin_number, Pin.IN)
 
         self.threshold_us = threshold_us
+        self.last_present = False  # convenience attribute, designed to be set from the calling code
         self.read_valid = False
         self.calibrated = False
         self.calibration: float = RcDetector.MAX_SENSE_TIME  # us
