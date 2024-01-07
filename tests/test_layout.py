@@ -32,6 +32,9 @@ class TestLocomotive:
     )
     def test_set_motor(self, velocity, expected_step, expected_direction, locomotive: Locomotive):
         locomotive.velocity = velocity
+        locomotive.velocity_direction = (
+            layout.RelativeDirection.FORWARD if velocity >= 0 else layout.RelativeDirection.REVERSE
+        )
         with patch.object(layout.Locomotive, "_set_motor") as mock_set_motor:
             locomotive._set_motor_step()
         assert locomotive._motor_step == expected_step

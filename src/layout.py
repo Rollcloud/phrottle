@@ -44,6 +44,7 @@ class Locomotive:
         self.profile = LOCOMOTIVE_PROFILES[self.id] if self.id else {}
         self.orientation = orientation
         self.velocity = 0  # units
+        self.velocity_direction = self.orientation
         self._motor_step = 0
         self._motor_dir = hardware.FORWARD
         hardware.init_motor()
@@ -52,13 +53,21 @@ class Locomotive:
         self.velocity = 0
         self._set_motor_step()
 
-    def _velocity_direction(self):
-        """Current direction of motion based on velocity."""
-        return RelativeDirection.FORWARD if self.velocity >= 0 else RelativeDirection.REVERSE
-
     def _speed(self):
         """Current speed of motion based on velocity."""
         return abs(self.velocity)
+
+    def movement_direction(self):
+        """Current absolute direction of motion."""
+        LEFT = AbsoluteDirection.LEFT
+        RIGHT = AbsoluteDirection.RIGHT
+        FORWARD = RelativeDirection.FORWARD
+
+        velocity_direction = self.velocity_direction
+        if self.orientation == LEFT:
+            return LEFT if velocity_direction == FORWARD else RIGHT
+        else:
+            return RIGHT if velocity_direction == FORWARD else LEFT
 
     def _set_motor(self):
         """
@@ -72,7 +81,7 @@ class Locomotive:
 
     def _set_motor_step(self):
         """Set the motor step from the locomotive's current velocity."""
-        direction_inversions = TRACK_POLARITY + self.orientation + self._velocity_direction()
+        direction_inversions = TRACK_POLARITY + self.orientation + self.velocity_direction
         self._motor_dir = hardware.FORWARD if direction_inversions % 2 == 0 else hardware.REVERSE
 
         speed = self._speed()
@@ -96,6 +105,12 @@ class Locomotive:
             self.velocity = max(self.velocity + amount, -self.profile.get("max_speed", 100))
         else:
             self.velocity = min(self.velocity + amount, self.profile.get("max_speed", 100))
+
+        if self.velocity > 0:
+            self.velocity_direction = RelativeDirection.FORWARD
+        if self.velocity < 0:
+            self.velocity_direction = RelativeDirection.REVERSE
+
         self._set_motor_step()
 
     def brake(self, amount: float = 0.2):
@@ -106,7 +121,7 @@ class Locomotive:
         else:
             speed -= amount
             self.velocity = speed * (
-                1 if self._velocity_direction() == RelativeDirection.FORWARD else -1
+                1 if self.velocity_direction == RelativeDirection.FORWARD else -1
             )
         self._set_motor_step()
 
