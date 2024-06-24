@@ -3,7 +3,7 @@ from machine import Pin
 
 
 class RcDetector:
-    MAX_SENSE_TIME = 20 * 10**3  # us
+    MAX_SENSE_TIME = 15 * 10**3  # us
     RISING_DEBOUNCE = 30 * MAX_SENSE_TIME  # us - min length of train
     FALLING_DEBOUNCE = 10 * MAX_SENSE_TIME  # us - min length of gap
 
@@ -44,6 +44,7 @@ class RcDetector:
         self._sensor = Pin(pin_number, Pin.IN)
         self._rising_callback = None
         self._falling_callback = None
+        self.is_debouncing = False
         self._debounce_ticks = utime.ticks_add(utime.ticks_us(), 0)
 
         self.threshold_us = threshold_us
@@ -62,6 +63,13 @@ class RcDetector:
         present = self.is_present()
         ticks = utime.ticks_us()
         debounce_ticks = utime.ticks_diff(self._debounce_ticks, ticks)
+
+        if self.is_debouncing is False and present != self._last_present:
+            self.is_debouncing = True
+
+        elif self.is_debouncing and debounce_ticks <= 0:
+            self._last_present = present
+            self.is_debouncing = False
 
         if present and not self._last_present and debounce_ticks <= 0:
             if self._rising_callback:
@@ -150,7 +158,7 @@ if __name__ == "__main__":
     detector = RcDetector(21, threshold_us=5 * 10**3, filter_alpha=0.1)
 
     def callback():
-        print("Called.")
+        print("Called rising.")
 
     detector.register_rising_callback(callback)
 
