@@ -19,7 +19,7 @@ else:
     print("Using regulator control")
 
     init_speaker()
-    engine = Locomotive(id="test", orientation=facing.LEFT)
+    engine = Locomotive(motor_number=0, id="test", orientation=facing.LEFT)
 
     def move_forwards(regulator_position):
         acceleration = (regulator_position - REG_MOVE) / 200

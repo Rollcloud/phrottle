@@ -9,7 +9,7 @@ REVERSE = "r"
 CONVERSION_FACTOR = 3.3 / (65535)
 
 led = Pin("LED", Pin.OUT)
-motor = None
+motors = {}
 speaker = None
 
 
@@ -36,23 +36,44 @@ def get_internal_temperature():
     return temperature
 
 
-def init_motor():
-    """Initialise a SimplePWMMotor."""
-    global motor
-    motor = SimplePWMMotor(2, 5, 100)
+def init_motor(number):
+    """
+    Initialise a SimplePWMMotor.
+
+    Choose the motor number from the SimplyRobotics board.
+    """
+    global motors
+    if number == 0:
+        motors[0] = SimplePWMMotor(2, 5, 100)
+    elif number == 1:
+        motors[1] = SimplePWMMotor(4, 3, 100)
+    elif number == 2:
+        motors[2] = SimplePWMMotor(6, 9, 100)
+    elif number == 3:
+        motors[3] = SimplePWMMotor(8, 7, 100)
 
 
-def motor_on(direction, percentage_vmax: float):
-    """Provide a wrapper for `SimplePWMMotor.on`."""
-    global motor
+def motor_on(number, direction, percentage_vmax: float):
+    """
+    Provide a wrapper for `SimplePWMMotor.on`.
+
+    Provide the motor number from the SimplyRobotics board.
+    """
+    global motors
+    motor = motors.get(number)
     if motor is None:
         raise Exception("Motor not initialised")
     motor.on(direction, percentage_vmax)
 
 
-def motor_off():
-    """Provide a wrapper for `SimplePWMMotor.off`."""
-    global motor
+def motor_off(number):
+    """
+    Provide a wrapper for `SimplePWMMotor.off`.
+
+    Provide the motor number from the SimplyRobotics board.
+    """
+    global motors
+    motor = motors.get(number)
     if motor is None:
         raise Exception("Motor not initialised")
     motor.off()

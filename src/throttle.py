@@ -3,7 +3,7 @@ from layout import AbsoluteDirection as facing
 from layout import Locomotive
 from layout import RelativeDirection as rel_dir
 
-_engine = Locomotive(id="Lourie", orientation=facing.LEFT)
+_engine = Locomotive(motor_number=0, id="Lourie", orientation=facing.LEFT)
 
 
 def engine_id():

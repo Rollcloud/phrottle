@@ -34,14 +34,16 @@ LOCOMOTIVE_PROFILES = {
 class Locomotive:
     """An instance of a locomotive containing a DC motor."""
 
-    def __init__(self, id=None, orientation: int = AbsoluteDirection.LEFT) -> None:
+    def __init__(self, motor_number, id=None, orientation: int = AbsoluteDirection.LEFT) -> None:
         """
         Create a new locomotive instance.
 
         Args:
-            ID: name of profile to apply to locomotive
-            Orientation: AbsoluteDirection locomotive is facing
+            motor_number (int): Number of motor from SimplyRobotics board.
+            ID (str): Name of profile to apply to locomotive.
+            Orientation (AbsoluteDirection): Direction the locomotive is facing.
         """
+        self.motor_number = motor_number
         self.id = id.lower() if id else None
         self.profile = LOCOMOTIVE_PROFILES[self.id] if self.id else {}
         self.orientation = orientation
@@ -49,7 +51,7 @@ class Locomotive:
         self.velocity_direction = self.orientation
         self._motor_step = 0
         self._motor_dir = hardware.FORWARD
-        hardware.init_motor()
+        hardware.init_motor(motor_number)
 
     def stop(self):
         self.velocity = 0
@@ -78,9 +80,9 @@ class Locomotive:
         Will stop motor if step is negative.
         """
         if self._motor_step <= 0:
-            hardware.motor_off()
+            hardware.motor_off(self.motor_number)
         else:
-            hardware.motor_on(self._motor_dir, self._motor_step)
+            hardware.motor_on(self.motor_number, self._motor_dir, self._motor_step)
 
     def _set_motor_step(self):
         """Set the motor step from the locomotive's current velocity."""
