@@ -7,3 +7,23 @@ profile = "black"
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 pythonpath = "src"
+
+[tool.poetry]
+name = "phrottle"
+version = "0.1.0"
+description = "A model railway controller for the Pico"
+authors = ["rollcloud <rollcloud@gmail.com>"]
+license = "License :: OSI Approved :: GNU Affero General Public License v3"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+ruff = "^0.4.10"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
