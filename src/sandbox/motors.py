@@ -1,5 +1,4 @@
 import utime
-
 from lib.SimplyRobotics import SimplePWMMotor
 
 FORWARD = "f"

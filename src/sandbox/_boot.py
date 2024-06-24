@@ -1,11 +1,10 @@
 # boot.py -- run on boot-up
 import json
 
+from lib import morse
 from machine import Pin
 from phew import connect_to_wifi
 from phew.logging import LOG_ALL, disable_logging_types
-
-from lib import morse
 
 disable_logging_types(LOG_ALL)
 

@@ -1,7 +1,6 @@
-from machine import Pin
-
 from layout import AbsoluteDirection as facing
 from layout import Evaluator, Locomotive, TrainDetector
+from machine import Pin
 from rc_detector import RcDetector
 from scheduler import Scheduler
 

@@ -1,6 +1,5 @@
 import json
 import time
-from datetime import datetime
 
 from microdot import Microdot, send_file
 from microdot_websocket import with_websocket

@@ -1,8 +1,7 @@
 from time import sleep_ms
 
-from machine import ADC, Pin
-
 from lib.SimplyRobotics import SimplePWMMotor
+from machine import ADC, Pin
 
 FORWARD = "f"
 REVERSE = "r"
@@ -44,7 +43,7 @@ def init_motor():
 
 
 def motor_on(direction, percentage_vmax: float):
-    """A wrapper for SimplePWMMotor.on"""
+    """Provide a wrapper for `SimplePWMMotor.on`."""
     global motor
     if motor is None:
         raise Exception("Motor not initialised")
@@ -52,7 +51,7 @@ def motor_on(direction, percentage_vmax: float):
 
 
 def motor_off():
-    """A wrapper for SimplePWMMotor.off"""
+    """Provide a wrapper for `SimplePWMMotor.off`."""
     global motor
     if motor is None:
         raise Exception("Motor not initialised")

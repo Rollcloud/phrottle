@@ -2,9 +2,13 @@ from utime import ticks_add, ticks_diff, ticks_ms
 
 
 class Scheduler:
+    """A simple scheduler that can be used to schedule tasks at regular intervals."""
+
     def __init__(self, period, one_shot=False) -> None:
         """
         Create a new scheduler.
+
+        Args:
           period: time interval in ms
           one_shot: True to only occur once
         """

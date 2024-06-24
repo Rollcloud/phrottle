@@ -1,8 +1,7 @@
 from unittest.mock import patch
 
-import pytest
-
 import layout
+import pytest
 
 mock_hardware = layout.hardware
 Locomotive = layout.Locomotive

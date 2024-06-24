@@ -1,5 +1,4 @@
 import utime
-
 from hardware import click_speaker, init_speaker, led
 from layout import AbsoluteDirection as facing
 from layout import Locomotive
@@ -15,7 +14,7 @@ print(f"Regulator position: {regulator_position:.0f}%")
 
 if regulator_position > 50:
     print("Starting web server")
-    import server  # imports server and takes over thread
+    import server  # noqa: F401  # imports server and takes over thread
 else:
     print("Using regulator control")
 

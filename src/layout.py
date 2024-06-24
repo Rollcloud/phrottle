@@ -37,8 +37,10 @@ class Locomotive:
     def __init__(self, id=None, orientation: int = AbsoluteDirection.LEFT) -> None:
         """
         Create a new locomotive instance.
-        ID: name of profile to apply to locomotive
-        Orientation: AbsoluteDirection locomotive is facing
+
+        Args:
+            ID: name of profile to apply to locomotive
+            Orientation: AbsoluteDirection locomotive is facing
         """
         self.id = id.lower() if id else None
         self.profile = LOCOMOTIVE_PROFILES[self.id] if self.id else {}
@@ -54,11 +56,11 @@ class Locomotive:
         self._set_motor_step()
 
     def _speed(self):
-        """Current speed of motion based on velocity."""
+        """Return current speed of motion based on velocity."""
         return abs(self.velocity)
 
     def movement_direction(self):
-        """Current absolute direction of motion."""
+        """Return current absolute direction of motion."""
         LEFT = AbsoluteDirection.LEFT
         RIGHT = AbsoluteDirection.RIGHT
         FORWARD = RelativeDirection.FORWARD
@@ -72,6 +74,7 @@ class Locomotive:
     def _set_motor(self):
         """
         Set motor to motor step and direction.
+
         Will stop motor if step is negative.
         """
         if self._motor_step <= 0:

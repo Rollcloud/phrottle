@@ -1,11 +1,10 @@
+import hardware
+import throttle
 import wifi
+from layout import RelativeDirection
 from phew import get_ip_address, server
 from phew.logging import LOG_ALL, disable_logging_types
 from phew.template import render_template
-
-import hardware
-import throttle
-from layout import RelativeDirection
 
 disable_logging_types(LOG_ALL)
 flash_led = hardware.flash_led

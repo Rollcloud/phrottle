@@ -1,5 +1,4 @@
 import utime
-
 from layout import AbsoluteDirection as facing
 from layout import Locomotive
 from layout import RelativeDirection as rel_dir

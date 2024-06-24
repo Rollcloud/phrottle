@@ -41,11 +41,9 @@ def print_free_size():
 
 def verify_phew():
     # verify it can be imported and list exposed classes
-    print(
-        "/lib/phew contains: " + ", ".join(i for i in sorted(os.listdir("/lib/phew")))
-    )
-    import phew
-    from phew import connect_to_wifi, server
+    print("/lib/phew contains: " + ", ".join(i for i in sorted(os.listdir("/lib/phew"))))
+    import phew  # noqa: F401
+    from phew import connect_to_wifi, server  # noqa: F401
 
     list_members(phew)
     list_members(phew.server)

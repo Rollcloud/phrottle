@@ -3,6 +3,8 @@ from machine import Pin
 
 
 class RcDetector:
+    """A threshold-based detector for an RC sensor."""
+
     MAX_SENSE_TIME = 15 * 10**3  # us
     RISING_DEBOUNCE = 30 * MAX_SENSE_TIME  # us - min length of train
     FALLING_DEBOUNCE = 10 * MAX_SENSE_TIME  # us - min length of gap
@@ -15,6 +17,7 @@ class RcDetector:
     def _filter(self, x) -> float:
         """
         Apply a simple 1st oder filter.
+
         alpha [0.0, 1.0]: lower is stronger
         """
         alpha = self._filter_alpha
@@ -124,6 +127,8 @@ class RcDetector:
 if __name__ == "__main__":
 
     class Scheduler:
+        """A very simple scheduler that can be used to schedule tasks at regular intervals."""
+
         def __init__(self, period, one_shot=False) -> None:
             self.period = period
             self.one_shot = one_shot
