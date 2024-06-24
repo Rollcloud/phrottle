@@ -11,6 +11,16 @@ A model railway throttle for the Pico.
 
 ## Installation
 
+### Dev Setup
+
+1. Install Poetry
+
+1. Setup Poetry
+
+1. Run Ruff an Pytest
+
+### Pico Setup
+
 With thanks to [SoongJr](https://github.com/SoongJr/pi-pico/blob/main/README.md) for the WiFi configuration and depedency installation scripts and instructions.
 
 1. Flash micropython onto your pico (you can get [the latest build](https://micropython.org/download/RPI_PICO_W/))
@@ -24,6 +34,10 @@ With thanks to [SoongJr](https://github.com/SoongJr/pi-pico/blob/main/README.md)
    rshell 'cp setup/install-dependencies.py /pyboard; repl ~ exec(open("/install-dependencies.py").read())'
    ```
 
-Attributions:
+## Run
+
+Use the Pico Device Controller to run `main.py`, `server.py`, or one of the sandbox scripts.
+
+## Attributions
 
 - Lever Icon: [Gambling icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/gambling)
