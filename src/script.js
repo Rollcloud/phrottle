@@ -53,6 +53,12 @@ serverSocket.onmessage = (event) => {
 let moveLeftBtn = document.querySelector("#move-left");
 let moveRightBtn = document.querySelector("#move-right");
 
+const point_through = () => {
+  send_message("change-point", "point-through");
+};
+const point_diverging = () => {
+  send_message("change-point", "point-diverging");
+};
 const move_left = () => {
   send_message("move", "left");
 };
@@ -81,6 +87,12 @@ window.addEventListener(
     }
 
     switch (event.code) {
+      case "ArrowUp":
+        point_through();
+        break;
+      case "ArrowDown":
+        point_diverging();
+        break;
       case "KeyA":
       case "ArrowLeft":
         move_left();
@@ -89,40 +101,7 @@ window.addEventListener(
       case "ArrowRight":
         move_right();
         break;
-    }
-  },
-  true
-);
-// window.addEventListener(
-//   "keyup",
-//   (event) => {
-//     if (event.defaultPrevented) {
-//       return; // Do nothing if event already handled
-//     }
-
-//     switch (event.code) {
-//       case "KeyA":
-//       case "ArrowLeft":
-//         stop();
-//         break;
-//       case "KeyD":
-//       case "ArrowRight":
-//         stop();
-//         break;
-//     }
-//   },
-//   true
-// );
-window.addEventListener(
-  "keydown",
-  (event) => {
-    if (event.defaultPrevented) {
-      return; // Do nothing if event already handled
-    }
-
-    switch (event.code) {
       case "KeyS":
-      case "ArrowDown":
       case "Space":
         stop();
         break;

@@ -1,9 +1,10 @@
 import utime
 from layout import AbsoluteDirection as facing
-from layout import Locomotive
+from layout import Locomotive, Point
 from layout import RelativeDirection as rel_dir
 
 _engine = Locomotive(motor_number=0, id="Lourie", orientation=facing.LEFT)
+_point = Point(motor_number=1, id="Point", through_is_forward=True)
 
 
 def engine_id():
@@ -56,6 +57,12 @@ def move(direction):
     # for _ in range(100):
     #     _engine.brake()
     #     utime.sleep_ms(10)
+
+
+def change_point(diverging):
+    _point.change(diverging)
+
+    print(f"point '{_point.id}' set to {'diverging' if _point.is_diverging() else 'through'}")
 
 
 # move(dir.FORWARD)

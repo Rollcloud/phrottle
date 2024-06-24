@@ -131,6 +131,59 @@ class Locomotive:
         self._set_motor_step()
 
 
+class PointState:
+    """State of a set of points on the railway."""
+
+    THROUGH = 0
+    DIVERGING = 1
+
+
+class Point:
+    """A point on the railway that can be switched."""
+
+    def __init__(self, motor_number, id, through_is_forward=True) -> None:
+        self.id = id
+        self._diverging = False
+        self.motor_number = motor_number
+        self.through_direction = hardware.FORWARD if through_is_forward else hardware.REVERSE
+        self.diverging_direction = hardware.REVERSE if through_is_forward else hardware.FORWARD
+
+        hardware.init_motor(motor_number)
+
+    def change(self, diverging: bool):
+        """
+        Change the point to the given state.
+
+        Note that there will be about a 3 second delay before the point change has been completed.
+        """
+        if self.motor_number:
+            direction = self.diverging_direction if diverging else self.through_direction
+            hardware.motor_on(self.motor_number, direction, 100)
+
+        self._diverging = diverging
+
+    def toggle(self):
+        """Toggle the point between diverging and through."""
+        self.change(not self._diverging)
+
+    def off(self):
+        """Turn off the point motor."""
+        if self.motor_number:
+            hardware.motor_off(self.motor_number)
+
+    def state(self):
+        """Return the current state of the point."""
+        return PointState.DIVERGING if self._diverging else PointState.THROUGH
+
+    def is_diverging(self):
+        """Return whether the point is currently diverging."""
+        return self._diverging
+
+    def is_through(self):
+        """Return whether the point is currently through."""
+        return not self._diverging
+
+
 class Evaluator:
     """A piece of railway bordered at each ingress by Train Detectors."""
 

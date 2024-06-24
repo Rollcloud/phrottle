@@ -98,6 +98,15 @@ async def move_ws(request, ws):
                 "velocity": throttle.velocity(),
                 "step": throttle.step(),
             }
+        elif message["type"] == "change-point":
+            diverging = message["text"] == "point-diverging"
+            throttle.change_point(diverging)
+            reply = {
+                "type": "ack",
+                "text": f"commanded: point {'diverging' if diverging else 'through'}",
+                "date": time.time(),
+                "route": "diverging" if diverging else "through",
+            }
         else:
             # echo message
             print(message)
@@ -127,6 +136,15 @@ def move(request, dir):
     direction = RelativeDirection.FORWARD if dir == "forward" else RelativeDirection.REVERSE
     throttle.move(direction)
     return f"moving {title(dir)}"
+
+
+@app.get("/point/diverge/<diverging>")
+def point_diverge(request, diverging):
+    if diverging not in ["true", "false"]:
+        return "Diverging must be 'true' or 'false'", 400
+
+    throttle.change_point(diverging == "true")
+    return f"point diverging={diverging}"
 
 
 @app.errorhandler(404)
