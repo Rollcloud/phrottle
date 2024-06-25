@@ -36,15 +36,15 @@ class RcDetector:
         self._sense_time = self._filter(self._sense_time)
         self.read_valid = True
 
-    def __init__(self, pin_number, threshold_us=30, filter_alpha=0.0) -> None:
+    def __init__(self, gpio_number, threshold_us=30, filter_alpha=0.0) -> None:
         """
         Initialise an RC detector connected to the provided pin.
 
         filter_alpha [0.0, 1.0]: lower is stronger
         """
-        self._pin_number = pin_number
+        self._gpio_number = gpio_number
         self._filter_alpha = filter_alpha
-        self._sensor = Pin(pin_number, Pin.IN)
+        self._sensor = Pin(gpio_number, Pin.IN)
         self._rising_callback = None
         self._falling_callback = None
         self.is_debouncing = False
