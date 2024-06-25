@@ -23,7 +23,7 @@ def detector_callback():
 detector.register_rising_callback(detector_callback)
 detector.register_falling_callback(detector_callback)
 
-engine = Locomotive(id="test", orientation=facing.LEFT)
+engine = Locomotive(motor_number=0, id="test", orientation=facing.LEFT)
 engine.profile["max_speed"] = 4  # set really slow for shuttle tests
 
 event_queue = []
