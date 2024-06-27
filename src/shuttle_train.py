@@ -1,6 +1,6 @@
 from detectors import AnalogueDetector
 from layout import AbsoluteDirection as facing
-from layout import Locomotive
+from layout import Locomotive, Point
 from machine import Pin
 from scheduler import Scheduler
 
@@ -15,6 +15,8 @@ detector = AnalogueDetector(28, threshold=128)
 engine = Locomotive(motor_number=0, id="test", orientation=facing.RIGHT)
 engine.profile["max_speed"] = 3  # set really slow for shuttle tests
 
+point = Point(motor_number=1, id="Point", through_is_forward=True)
+
 event_queue = []
 
 
@@ -23,28 +25,25 @@ class Events:
 
     SYSTEM_STOP = 0
     TRAIN_DETECTED = 1
-    SHUTTLE_START = 2
-    SHUTTLE_STOP = 3
-
-
-def home_stop():
-    engine.brake(1.5)
+    TRAIN_UNDETECTED = 2
+    SHUTTLE_START = 3
+    SHUTTLE_STOP = 4
+    TASK_COMPLETE = 5
 
 
 def home_ready():
     global countdown
-    countdown = 3 * 10  # counts at 10 per second
-
     engine.stop()
+    countdown = 2.5 * 10  # counts at 10 per second
+    event_queue.append(Events.SHUTTLE_START)
 
 
 def home_start():
     global countdown
+    engine.accelerate(0.1)
     countdown -= 1
     if countdown < 0:
         event_queue.append(Events.SHUTTLE_STOP)
-
-    engine.accelerate(0.1)
 
 
 def away_stop():
@@ -53,15 +52,31 @@ def away_stop():
 
 def away_start():
     engine.accelerate(-0.1)
+    if detector.is_present():
+        event_queue.append(Events.TRAIN_DETECTED)
+
+
+def home_stop():
+    if engine.speed > 0.2:
+        engine.brake(1.5)
+    if detector.is_present() is False:
+        engine.stop()
+        event_queue.append(Events.TRAIN_UNDETECTED)
+
+
+def change_point():
+    point.toggle()
+    event_queue.append(Events.TASK_COMPLETE)
 
 
 state_machine = {
     # state: (callback, {event: state})
-    "home_stop": {Events.SHUTTLE_START: "home_ready"},
-    "home_ready": {Events.TRAIN_DETECTED: "home_start"},
+    "home_ready": {Events.SHUTTLE_START: "home_start"},
     "home_start": {Events.SHUTTLE_STOP: "away_stop"},
     "away_stop": {Events.SHUTTLE_START: "away_start"},
     "away_start": {Events.TRAIN_DETECTED: "home_stop"},
+    "home_stop": {Events.TRAIN_UNDETECTED: "change_point"},
+    "change_point": {Events.TASK_COMPLETE: "home_ready"},
 }
 state = "home_ready"
 
@@ -93,14 +108,6 @@ def low_frequency_loop(ticks_delta):
     global up_time, state, detector
     up_time += ticks_delta
 
-    if detector.is_present():
-        event_queue.append(Events.TRAIN_DETECTED)
-        state = run_state_machine(state)  # run an additional time to handle the event
-        print(
-            f"state={state}, velocity={engine.velocity:.1f} events={event_queue}",
-            end="    \r",
-        )
-
     state = run_state_machine(state)
 
     print(
@@ -111,7 +118,7 @@ def low_frequency_loop(ticks_delta):
 
 sensors_scheduler = Scheduler(SENSORS_PERIOD_MS)
 lf_scheduler = Scheduler(LOW_FREQUENCY_PERIOD_MS)
-shuttle_scheduler = Scheduler(20 * 1000)
+shuttle_scheduler = Scheduler(10 * 1000)
 
 try:
     while True:

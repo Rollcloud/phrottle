@@ -57,7 +57,8 @@ class Locomotive:
         self.velocity = 0
         self._set_motor_step()
 
-    def _speed(self):
+    @property
+    def speed(self):
         """Return current speed of motion based on velocity."""
         return abs(self.velocity)
 
@@ -89,7 +90,7 @@ class Locomotive:
         direction_inversions = TRACK_POLARITY + self.orientation + self.velocity_direction
         self._motor_dir = hardware.FORWARD if direction_inversions % 2 == 0 else hardware.REVERSE
 
-        speed = self._speed()
+        speed = self.speed
 
         if self.velocity > 0:
             # moving forwards
@@ -120,7 +121,7 @@ class Locomotive:
 
     def brake(self, amount: float = 0.2):
         """Apply a deceleration of amount/s^2 to the current speed, stopping at zero."""
-        speed = self._speed()
+        speed = self.speed
         if amount >= speed:
             self.velocity = 0
         else:
