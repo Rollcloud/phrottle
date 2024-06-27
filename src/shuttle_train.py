@@ -1,30 +1,19 @@
+from detectors import AnalogueDetector
 from layout import AbsoluteDirection as facing
-from layout import Evaluator, Locomotive, TrainDetector
+from layout import Locomotive
 from machine import Pin
-from rc_detector import RcDetector
 from scheduler import Scheduler
 
 LOW_FREQUENCY_PERIOD_MS = 100
-SENSORS_PERIOD_MS = RcDetector.MAX_SENSE_TIME // 1000
+SENSORS_PERIOD_MS = 10
 
 up_time = 0  # ms
 
 led = Pin("LED", Pin.OUT)
-detector = RcDetector(21, threshold_us=5 * 10**3, filter_alpha=0.1)
-track_end_evaluator = Evaluator("track_end")
-train_detector = TrainDetector("track_end")
-train_detector.register_evaluators(None, track_end_evaluator)
+detector = AnalogueDetector(28, threshold=128)
 
-
-def detector_callback():
-    train_detector.trigger(engine.movement_direction())
-
-
-detector.register_rising_callback(detector_callback)
-detector.register_falling_callback(detector_callback)
-
-engine = Locomotive(motor_number=0, id="test", orientation=facing.LEFT)
-engine.profile["max_speed"] = 4  # set really slow for shuttle tests
+engine = Locomotive(motor_number=0, id="test", orientation=facing.RIGHT)
+engine.profile["max_speed"] = 3  # set really slow for shuttle tests
 
 event_queue = []
 
@@ -44,7 +33,7 @@ def home_stop():
 
 def home_ready():
     global countdown
-    countdown = 7 * 10  # counts at 10 per second
+    countdown = 3 * 10  # counts at 10 per second
 
     engine.stop()
 
@@ -97,7 +86,7 @@ def sensors_loop():
     global detector
     present = detector.is_present()
     led.value(1 if present else 0)
-    detector.perform_read()
+    # print(f"{detector.value(): 3d} {present}", end="")
 
 
 def low_frequency_loop(ticks_delta):
@@ -106,6 +95,11 @@ def low_frequency_loop(ticks_delta):
 
     if detector.is_present():
         event_queue.append(Events.TRAIN_DETECTED)
+        state = run_state_machine(state)  # run an additional time to handle the event
+        print(
+            f"state={state}, velocity={engine.velocity:.1f} events={event_queue}",
+            end="    \r",
+        )
 
     state = run_state_machine(state)
 
