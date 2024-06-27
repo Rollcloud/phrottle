@@ -8,6 +8,8 @@ LOW_FREQUENCY_PERIOD_MS = 100
 SENSORS_PERIOD_MS = 10
 
 up_time = 0  # ms
+wait_trigger = None
+wait_flag = False
 
 led = Pin("LED", Pin.OUT)
 detector = AnalogueDetector(28, threshold=128)
@@ -57,7 +59,7 @@ def away_start():
 
 
 def home_stop():
-    if engine.speed > 0.2:
+    if engine.speed > 1.6:
         engine.brake(1.5)
     if detector.is_present() is False:
         engine.stop()
@@ -69,6 +71,11 @@ def change_point():
     event_queue.append(Events.TASK_COMPLETE)
 
 
+def point_changing():
+    if wait_for(3000):
+        event_queue.append(Events.TASK_COMPLETE)
+
+
 state_machine = {
     # state: (callback, {event: state})
     "home_ready": {Events.SHUTTLE_START: "home_start"},
@@ -76,7 +83,8 @@ state_machine = {
     "away_stop": {Events.SHUTTLE_START: "away_start"},
     "away_start": {Events.TRAIN_DETECTED: "home_stop"},
     "home_stop": {Events.TRAIN_UNDETECTED: "change_point"},
-    "change_point": {Events.TASK_COMPLETE: "home_ready"},
+    "change_point": {Events.TASK_COMPLETE: "point_changing"},
+    "point_changing": {Events.TASK_COMPLETE: "home_ready"},
 }
 state = "home_ready"
 
@@ -97,6 +105,20 @@ def run_state_machine(state):
         return state
 
 
+def wait_for(milliseconds):
+    """Wait for the given number of milliseconds before returning True."""
+    global wait_trigger, wait_flag
+
+    if wait_trigger is None:
+        wait_trigger = up_time + milliseconds
+    elif wait_flag:
+        wait_flag = False
+        wait_trigger = None
+        return True
+
+    return False
+
+
 def sensors_loop():
     global detector
     present = detector.is_present()
@@ -105,8 +127,11 @@ def sensors_loop():
 
 
 def low_frequency_loop(ticks_delta):
-    global up_time, state, detector
+    global up_time, state, wait_trigger, wait_flag
     up_time += ticks_delta
+
+    if wait_trigger and up_time >= wait_trigger:
+        wait_flag = True
 
     state = run_state_machine(state)
 
