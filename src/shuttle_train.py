@@ -34,22 +34,20 @@ class Events:
 
 
 def home_ready():
-    global countdown
     engine.stop()
-    countdown = 2.5 * 10  # counts at 10 per second
     event_queue.append(Events.SHUTTLE_START)
 
 
 def home_start():
-    global countdown
     engine.accelerate(0.1)
-    countdown -= 1
-    if countdown < 0:
+    if wait_for(2500):
         event_queue.append(Events.SHUTTLE_STOP)
 
 
 def away_stop():
     engine.brake(0.25)
+    if wait_for(3500):
+        event_queue.append(Events.SHUTTLE_START)
 
 
 def away_start():
@@ -135,15 +133,16 @@ def low_frequency_loop(ticks_delta):
 
     state = run_state_machine(state)
 
+    wait_str = f"wait={((wait_trigger - up_time) / 1000 if wait_trigger else 0.0):.1f}s"
+
     print(
-        f"state={state}, velocity={engine.velocity:.1f} events={event_queue}",
+        f"state={state}, velocity={engine.velocity:.1f} events={event_queue} {wait_str}",
         end="    \r",
     )
 
 
 sensors_scheduler = Scheduler(SENSORS_PERIOD_MS)
 lf_scheduler = Scheduler(LOW_FREQUENCY_PERIOD_MS)
-shuttle_scheduler = Scheduler(10 * 1000)
 
 try:
     while True:
@@ -152,9 +151,6 @@ try:
 
         if lf_scheduler.is_ready():
             low_frequency_loop(lf_scheduler.delta)
-
-        if shuttle_scheduler.is_ready():
-            event_queue.append(Events.SHUTTLE_START)
 
 except KeyboardInterrupt:
     print("Keyboard exit detected")
