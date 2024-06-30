@@ -203,11 +203,13 @@ class EventOnChangeBehaviour(Behaviour):
 if __name__ == "__main__":
     led = Pin("LED", Pin.OUT)
     # detector = TouchDetector(0)
-    detector = AnalogueDetector(28, simple_threshold=150)
+
+    wagon_detector = AnalogueDetector(28)
+    wagon_converter = SimpleThresholdConverter(wagon_detector, threshold=150)
 
     while True:
-        is_present = detector.is_present()
-        value = detector.value()
+        is_present = wagon_converter.is_present()
+        value = wagon_converter.value()
 
         led.value(is_present)
 
