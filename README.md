@@ -29,10 +29,7 @@ With thanks to [SoongJr](https://github.com/SoongJr/pi-pico/blob/main/README.md)
    rshell 'cp setup/configure-wifi.py /pyboard; repl ~ exec(open("/configure-wifi.py").read())'
    ```
    This will prompt for credentials and write them into a file on the pico, so there is no chance you'll accidentally upload them to github.
-1. Run `setup/install-dependencies.py` on the pico, this uses your wifi to install the phew! module:
-   ```sh
-   rshell 'cp setup/install-dependencies.py /pyboard; repl ~ exec(open("/install-dependencies.py").read())'
-   ```
+1. Run `python .\src\setup\sync.py` to transfer all files from `src/rp2` to the pico board
 
 ## Run
 
