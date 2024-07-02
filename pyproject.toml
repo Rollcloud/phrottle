@@ -1,5 +1,5 @@
 [tool.ruff]
-extend-exclude = ["src/lib/", "src/sandbox/"]
+extend-exclude = ["src/rp2/lib/", "src/sandbox/"]
 line-length = 100
 
 # [tool.ruff.lint]

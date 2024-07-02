@@ -1,5 +1,5 @@
-from machine import Pin
 import utime
+from machine import Pin
 
 sensor = Pin(28, Pin.IN)
 
