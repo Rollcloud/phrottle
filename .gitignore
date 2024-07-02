@@ -8,3 +8,6 @@
 # Python
 *.pyc
 __pycache__
+
+# Pico
+.wifi/
