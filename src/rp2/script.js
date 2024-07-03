@@ -52,6 +52,8 @@ serverSocket.onmessage = (event) => {
 
 let moveLeftBtn = document.querySelector("#move-left");
 let moveRightBtn = document.querySelector("#move-right");
+let pointThroughBtn = document.querySelector("#point-through");
+let pointDivergeBtn = document.querySelector("#point-diverge");
 
 const point_through = () => {
   send_message("change-point", "point-through");
@@ -78,6 +80,12 @@ moveRightBtn.addEventListener("touchstart", move_right);
 moveRightBtn.addEventListener("mousedown", move_right);
 // moveRightBtn.addEventListener("touchend", stop);
 // moveRightBtn.addEventListener("mouseup", stop);
+
+pointThroughBtn.addEventListener("touchstart", point_through);
+pointThroughBtn.addEventListener("mousedown", point_through);
+
+pointDivergeBtn.addEventListener("touchstart", point_diverging);
+pointDivergeBtn.addEventListener("mousedown", point_diverging);
 
 window.addEventListener(
   "keydown",
