@@ -1,13 +1,17 @@
 """Implement `mpremote fs cp -r src/rp2/ :/` in Python until mpremote release-1.24.0 (https://github.com/micropython/micropython/milestone/7) is available."""
 
 import subprocess
+import sys
 from pathlib import Path
 
 import mpremote
 
 SOURCE = Path("src/rp2/")
 DEST = Path(":")
+DEFAULT_SEARCH = "*"
 
+
+search = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_SEARCH
 
 if mpremote.__version__ >= "1.24.0":
     print(
@@ -29,7 +33,7 @@ def mpremote_fs_cp(source: Path, dest: Path):
 
 
 # Recursively iterate over all files in the source directory
-for source_file in SOURCE.rglob("*"):
+for source_file in SOURCE.rglob(search):
     # Calculate the relative path of the source file
     relative_path = source_file.relative_to(SOURCE)
     # Calculate the destination path of the source file
