@@ -1,34 +1,24 @@
 import utime
+from machine import ADC
 from SimplyRobotics import PIOServo  # type: ignore
 
-
-position = 0  # degrees
-velocity = 0  # degrees per second
-acceleration = 50  # degrees per second squared
-
-tick_period = 0.01  # seconds
-
 servo = PIOServo(18)
-
 servo.registerServo()
 
-servo.goToPosition(0)
+sensor = ADC(1)
 
-utime.sleep(1)
+
+def read_sensor():
+    return sensor.read_u16() >> 6
+
 
 try:
     while True:
-        velocity += acceleration * tick_period
-        position += velocity
+        value = read_sensor() / 1024 * 180
+        position = min(max(180 - value, 0), 180)
 
-        # add bounce
-        if position >= 180:
-            velocity = -velocity * 0.6
-
-        position = min(position, 180)
-
-        print(position, end="          \r")
+        print("value =", value, end="          \r")
         servo.goToPosition(position)
-        utime.sleep(tick_period)
+        utime.sleep(2)
 finally:
     servo.deregisterServo()
