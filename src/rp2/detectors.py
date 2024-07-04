@@ -153,6 +153,18 @@ class Behaviour:
         raise NotImplementedError
 
 
+class InverterBehaviour(Behaviour):
+    """Invert the presence state of a detector."""
+
+    def __init__(self, parent_behaviour: Behaviour | Converter) -> None:
+        """Initialise an inverter behaviour."""
+        self.parent_behaviour = parent_behaviour
+
+    def is_present(self) -> bool:
+        """Return the inverted presence state of the parent behaviour."""
+        return not self.parent_behaviour.is_present()
+
+
 class DebounceBehaviour(Behaviour):
     """
     Apply a time-based debounce to a detector.
