@@ -3,7 +3,7 @@ import time
 
 import hardware
 import throttle
-import wifi
+import wifi  # type: ignore
 from layout import RelativeDirection
 from microdot_asyncio import Microdot, send_file
 from microdot_asyncio_websocket import with_websocket
@@ -162,4 +162,4 @@ except Exception as err:
     flash_led(t=1, n=5)
     import sys
 
-    sys.print_exception(err)
+    sys.print_exception(err)  # type: ignore

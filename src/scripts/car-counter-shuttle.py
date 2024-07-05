@@ -1,5 +1,5 @@
 import utime
-from detectors import (
+from detectors import (  # type: ignore
     AGCConverter,
     AnalogueDetector,
     BehaviourEvent,
@@ -9,9 +9,9 @@ from detectors import (
     SchmittConverter,
     SimpleThresholdConverter,
 )
-from hardware import led
-from layout import AbsoluteDirection as Facing
-from layout import Locomotive, Point
+from hardware import led  # type: ignore
+from layout import AbsoluteDirection as Facing  # type: ignore
+from layout import Locomotive, Point  # type: ignore
 
 COUNT_THRESHOLD = 50
 CLEAR_THRESHOLD = 60
