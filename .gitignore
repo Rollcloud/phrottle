@@ -9,5 +9,8 @@
 *.pyc
 __pycache__
 
+# Dev
+sync.yaml
+
 # Pico
 .wifi/
