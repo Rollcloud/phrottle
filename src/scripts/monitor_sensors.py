@@ -119,11 +119,20 @@ def display(sensors, blocks):
     for key, sensor_key in sensor_replacements.items():
         track_diagram = track_diagram.replace(key, "!" if sensors[sensor_key].is_present() else ":")
 
+    value_strings = "\n".join(
+        [
+            f"{key}: {sensor.value()}"
+            for key, sensor in sensors.items()
+            if key in ["POINT_BASE_P", "POINT_THROUGH_P", "POINT_DIVERGE_P"]
+        ]
+    )
+
     return "".join(
         [
             hide_cursor,
             track_diagram,
-            start_of_previous_line * 3,
+            value_strings,
+            start_of_previous_line * 5,
             show_cursor,
         ]
     )
