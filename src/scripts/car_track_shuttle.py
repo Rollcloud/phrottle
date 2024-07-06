@@ -17,23 +17,33 @@ loco.profile["max_speed"] = 1  # set really slow for shuttle tests
 is_running = False
 stop_when = (-1, 0)
 
+connections = {
+    "POINT_BASE_C": (0, 1),
+    "POINT_THROUGH_C": (1, 2),
+    "POINT_DIVERGE_C": (1, 3),
+}
 
-def move_wagon(sensor_key: str, is_triggered: bool, is_moving_left: bool) -> None:
+
+def getBlockEntrySensor(block_number: int, is_moving_left: bool) -> str:
+    """Get the sensor key for sensor that will be triggered when the block is entered."""
+    connection_index = 0 if is_moving_left else 1
+    for key, block_numbers in connections.items():
+        if block_numbers[connection_index] == block_number:
+            return key
+
+    raise ValueError(f"Block number {block_number} not found in connections")
+
+
+def move_wagon(
+    blocks, connections, sensor_key: str, is_triggered: bool, is_moving_left: bool
+) -> None:
     """Move a wagon based on the sensor key and trigger state."""
-    global blocks
-
-    rules = {
-        "POINT_BASE_C": (0, 1),
-        "POINT_THROUGH_C": (1, 2),
-        "POINT_DIVERGE_C": (1, 3),
-    }
-
     if is_triggered:
-        block_number = rules[sensor_key][0 if is_moving_left else 1]
+        block_number = connections[sensor_key][0 if is_moving_left else 1]
         blocks[block_number] += 1
     else:
         # is released
-        block_number = rules[sensor_key][1 if is_moving_left else 0]
+        block_number = connections[sensor_key][1 if is_moving_left else 0]
         blocks[block_number] -= 1
 
 
@@ -119,13 +129,14 @@ def is_waiting_for(duration):
     return True
 
 
-def run_train():
+def run_train(is_running, is_moving_left, blocks, sensors):
     """Shuttle train over the sensor."""
-    global is_running, stop_when, blocks, sensors
+    global stop_when
 
     if is_running:
         block_number, wagon_count = stop_when
-        if blocks[block_number] >= wagon_count:
+        block_entry_sensor = getBlockEntrySensor(block_number, is_moving_left)
+        if blocks[block_number] >= wagon_count and not sensors[block_entry_sensor].is_present():
             loco.stop()
             print("Move Completed")
             is_running = False
@@ -135,9 +146,9 @@ def run_train():
         print(display(sensors, blocks), end="")
         print("\n\n")
 
-        command = input("Enter command [INSTR OBJ param1 param2]: ").split(" ")
+        command = input("Enter command [INSTR OBJ param1 param2]:\n").split(" ")
 
-        if command[0] == "SET":
+        if command[0].upper() == "SET":
             if len(command) != 3:
                 print("Invalid command")
                 return
@@ -146,18 +157,18 @@ def run_train():
             blocks[block_number] = wagon_count
             print("Set block", block_number, "to", wagon_count)
 
-        if command[0] == "PNT":
+        elif command[0].upper() == "PNT":
             if len(command) != 2:
                 print("Invalid command")
                 return
             diverge = command[1] == "1"
             check_and_change_point(diverge=diverge)
 
-        elif command[0] == "MOV":
+        elif command[0].upper() == "MOV":
             if len(command) != 4:
                 print("Invalid command")
                 return
-            forwards = command[1] == "FWD"
+            forwards = command[1].upper() == "FWD"
             loco.accelerate(10 if forwards else -10)  # full speed
             block_number = int(command[2])
             wagon_count = int(command[3])
@@ -173,6 +184,13 @@ def run_train():
             )
             is_running = True
 
+        elif command[0].upper() == "DIS":
+            stop_when = (0, 1)
+            print("Displaying sensors")
+            is_running = True
+
+    return is_running
+
 
 if __name__ == "__main__":
     led.off()
@@ -183,17 +201,25 @@ if __name__ == "__main__":
 
     try:
         while True:
-            run_train()
+            is_moving_left = loco.movement_direction() == Facing.LEFT
+
+            is_running = run_train(is_running, is_moving_left, blocks, sensors)
+
+            # Monitor end of track
+            event = sensors["EOT_P"].check_event()
+            if is_moving_left and event == BehaviourEvent.TRIGGER:
+                loco.stop()
+                is_running = False
+                print("End of track reached, stopping train")
 
             # Monitor wagon counters
-            is_moving_left = loco.movement_direction() == Facing.LEFT
             for key in sensors:
                 if key.endswith("_C"):
                     event = sensors[key].check_event()
                     if event == BehaviourEvent.TRIGGER:
-                        move_wagon(key, True, is_moving_left)
+                        move_wagon(blocks, connections, key, True, is_moving_left)
                     elif event == BehaviourEvent.RELEASE:
-                        move_wagon(key, False, is_moving_left)
+                        move_wagon(blocks, connections, key, False, is_moving_left)
 
             # Show display
             print(display(sensors, blocks), end="")
