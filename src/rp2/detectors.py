@@ -158,7 +158,9 @@ class Behaviour:
 
     def is_present(self) -> bool:
         """Return whether an object is present."""
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"Behaviour {self.__class__.__name__} must implement is_present()"
+        )
 
 
 class InverterBehaviour(Behaviour):
@@ -208,6 +210,10 @@ class EventOnChangeBehaviour(Behaviour):
         """Initialise an event-on-change behaviour."""
         self.parent_behaviour = parent_behaviour
         self._last_present = False
+
+    def is_present(self) -> bool:
+        """Return the parent's presence state."""
+        return self.parent_behaviour.is_present()
 
     def check_event(self) -> int:
         """Check for an event."""
