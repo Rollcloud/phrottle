@@ -21,11 +21,11 @@ from detectors import (  # type: ignore
 from layout import AbsoluteDirection as Facing  # type: ignore
 from layout import Locomotive, Point  # type: ignore
 
-COUNT_THRESHOLD = 5
-CLEAR_THRESHOLD = 15
+COUNT_THRESHOLD = 10
+CLEAR_THRESHOLD = 20
 FOUND_THRESHOLD = 20
 
-MAX_SPEED = 250  # mm/s
+MAX_SPEED = 500  # mm/s
 MIN_WAGON_LENGTH = 25  # 1 inch in mm
 REFLECTOR_LENGTH = 5  # mm
 
@@ -38,7 +38,7 @@ with open("config.json", "r") as f:
 
 
 point = Point(motor_number=1, id="Point")
-loco = Locomotive(motor_number=0, id="test", orientation=Facing.RIGHT)
+loco = Locomotive(motor_number=0, id="test", orientation=Facing.LEFT)
 
 
 def create_touch_sensor(gpio_number):
@@ -56,7 +56,8 @@ def create_end_of_track_sensor(gpio_number):
     eot_converter = SimpleThresholdConverter(eot_detector, threshold=1)
     eot_inverter = InverterBehaviour(eot_converter)
     eot_debouncer = DebounceBehaviour(eot_inverter, debounce_time_ms=1000)
-    return eot_debouncer
+    eot_events = EventOnChangeBehaviour(eot_debouncer)
+    return eot_events
 
 
 def create_wagon_sensors(gpio_number):
