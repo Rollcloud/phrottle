@@ -57,6 +57,10 @@ class AnalogueDetector(Detector):
 class Converter:
     """A base class for converters providing common functionality."""
 
+    def value(self) -> int:
+        """Return the detector's value."""
+        return self.detector.value()
+
     def is_present(self) -> bool:
         """Return whether an object is present."""
         raise NotImplementedError
@@ -69,7 +73,7 @@ class SimpleThresholdConverter(Converter):
         self, detector: Detector, threshold=DEFAULT_THRESHOLD, present_on_high=True
     ) -> None:
         """Initialise a simple threshold converter."""
-        self.value = detector.value
+        self.detector = detector
         self.threshold = threshold
         self.present_on_high = present_on_high
 
@@ -81,9 +85,9 @@ class SimpleThresholdConverter(Converter):
         Output is inverted if present_on_high is False.
         """
         if self.present_on_high:
-            return self.value() >= self.threshold
+            return self.detector.value() >= self.threshold
         else:
-            return self.value() <= self.threshold
+            return self.detector.value() <= self.threshold
 
 
 class SchmittConverter(Converter):
@@ -147,6 +151,10 @@ class AGCConverter(Converter):
 
 class Behaviour:
     """A base class for behaviours providing common functionality."""
+
+    def value(self) -> int:
+        """Return the parent's value."""
+        return self.parent_behaviour.value()
 
     def is_present(self) -> bool:
         """Return whether an object is present."""
