@@ -116,6 +116,7 @@ wait_until = None
 
 
 def is_waiting_for(duration):
+    """Wait for a duration in milliseconds before returning True."""
     global wait_until
 
     if wait_until is None:
@@ -136,6 +137,10 @@ def run_train(is_running, is_moving_left, blocks, sensors):
     if is_running:
         block_number, wagon_count = stop_when
         block_entry_sensor = getBlockEntrySensor(block_number, is_moving_left)
+        if not is_waiting_for(5000):
+            loco.stop()
+            print("Move Timed Out")
+            is_running = False
         if blocks[block_number] >= wagon_count and not sensors[block_entry_sensor].is_present():
             loco.stop()
             print("Move Completed")
