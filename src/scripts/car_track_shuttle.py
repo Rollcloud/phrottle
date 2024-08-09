@@ -1,4 +1,21 @@
+"""
+This script is used to test the shuttle train on the track with wagons.
+
+The script will prompt the user for commands to set the number of wagons on each block,
+move the train, and change the point.
+The script will also display the state of the sensors and blocks in the console.
+
+Commands:
+- SET block_number wagon_count: Set the number of wagons on a block
+- PNT 0|1: Change the point to through or diverge
+- MOV FWD|BWD block_number wagon_count: Move the train forwards or backwards to a block until a number of wagons are detected
+- DIS: Display the state of the sensors and blocks
+"""
+
+import json
+
 import utime
+import wifi  # type: ignore
 from definitions import (  # type: ignore
     loco,
     min_trigger_duration,
@@ -9,10 +26,17 @@ from definitions import (  # type: ignore
 from detectors import (  # type: ignore
     BehaviourEvent,
 )
-from hardware import led  # type: ignore
+from hardware import get_internal_temperature, get_iso_datetime, led, set_rtc_time  # type: ignore
 from layout import AbsoluteDirection as Facing  # type: ignore
+from umqtt.simple import MQTTClient
 
+# Set up the locomotive
+loco.orientation = Facing.RIGHT
 loco.profile["max_speed"] = 1  # set really slow for shuttle tests
+loco.profile["start_step_forward"] = 15
+loco.profile["start_step_reverse"] = 7
+
+# Set up the script
 
 is_running = False
 stop_when = (-1, 0)
@@ -23,6 +47,26 @@ connections = {
     "POINT_DIVERGE_C": (1, 3),
 }
 
+# store sensor data
+MQTT_BROKER = "192.168.88.117"
+qt = MQTTClient("pico", MQTT_BROKER, keepalive=300)
+timestamps = []
+sensor_data = []
+
+
+def send_sensor_data():
+    global timestamps, sensor_data
+    num_samples = len(timestamps)
+    qt.connect()
+    for timestamp, data in zip(timestamps, sensor_data):
+        payload = {"timestamp": timestamp, "temperature": get_internal_temperature()}
+        payload.update(data)
+        qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
+    qt.disconnect()
+    timestamps = []
+    sensor_data = []
+    print(f"Sent {num_samples} samples")
+
 
 def getBlockEntrySensor(block_number: int, is_moving_left: bool) -> str:
     """Get the sensor key for sensor that will be triggered when the block is entered."""
@@ -31,7 +75,10 @@ def getBlockEntrySensor(block_number: int, is_moving_left: bool) -> str:
         if block_numbers[connection_index] == block_number:
             return key
 
-    raise ValueError(f"Block number {block_number} not found in connections")
+    available_connections = ", ".join(list(connections.values()))
+    raise ValueError(
+        f"Block number {block_number} not found in connections\nOptions are: [{available_connections}]"
+    )
 
 
 def move_wagon(
@@ -132,7 +179,7 @@ def is_waiting_for(duration):
 
 def run_train(is_running, is_moving_left, blocks, sensors):
     """Shuttle train over the sensor."""
-    global stop_when
+    global stop_when, wait_until
 
     if is_running:
         block_number, wagon_count = stop_when
@@ -140,10 +187,13 @@ def run_train(is_running, is_moving_left, blocks, sensors):
         if not is_waiting_for(5000):
             loco.stop()
             print("Move Timed Out")
+            send_sensor_data()
             is_running = False
         if blocks[block_number] >= wagon_count and not sensors[block_entry_sensor].is_present():
             loco.stop()
             print("Move Completed")
+            send_sensor_data()
+            wait_until = None
             is_running = False
 
     else:
@@ -198,17 +248,28 @@ def run_train(is_running, is_moving_left, blocks, sensors):
 
 
 if __name__ == "__main__":
+    wifi.connect_with_saved_credentials(verbose=False)
+
     led.off()
 
     print("Track Car Shuttle Test")
+
+    set_rtc_time()
+
     print("Min trigger interval:", min_trigger_interval, "ms")
     print("Min trigger duration:", min_trigger_duration, "ms")
 
     try:
         while True:
+            loop_start = utime.ticks_ms()
+
             is_moving_left = loco.movement_direction() == Facing.LEFT
 
             is_running = run_train(is_running, is_moving_left, blocks, sensors)
+
+            # Update sensor data
+            timestamps.append(get_iso_datetime())
+            sensor_data.append({})
 
             # Monitor end of track
             event = sensors["EOT_P"].check_event()
@@ -225,11 +286,19 @@ if __name__ == "__main__":
                         move_wagon(blocks, connections, key, True, is_moving_left)
                     elif event == BehaviourEvent.RELEASE:
                         move_wagon(blocks, connections, key, False, is_moving_left)
+                    if is_running:
+                        sensor_data[-1][key] = sensors[
+                            key
+                        ].parent_behaviour.parent_behaviour.detector.value()
 
             # Show display
             print(display(sensors, blocks), end="")
 
-            utime.sleep_ms(min_trigger_duration)
+            loop_end = utime.ticks_ms()
+            loop_time = utime.ticks_diff(loop_end, loop_start)
+            loop_delay = min_trigger_duration - loop_time
+
+            utime.sleep_ms(max(0, loop_delay))
 
     except KeyboardInterrupt:
         loco.stop()
