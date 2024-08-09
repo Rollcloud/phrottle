@@ -17,7 +17,16 @@ A model railway throttle for the Pico.
 
 1. Setup Poetry
 
-1. Run Ruff an Pytest
+1. Run Ruff
+
+   ```sh
+   python -m ruff check --fix
+   ```
+
+1. Run PyTest
+   ```sh
+   python -m pytest
+   ```
 
 ### Pico Setup
 
