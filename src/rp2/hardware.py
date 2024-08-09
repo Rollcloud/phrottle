@@ -1,13 +1,20 @@
-from time import sleep_ms
+import socket
+import struct
+from time import gmtime, sleep_ms, ticks_ms
 
 from lib.SimplyRobotics import SimplePWMMotor
-from machine import ADC, Pin
+from machine import ADC, RTC, Pin
 
 FORWARD = "f"
 REVERSE = "r"
 
 CONVERSION_FACTOR = 3.3 / (65535)
 
+NTP_DELTA = 2208988800
+NTP_HOST = "pool.ntp.org"
+msec_offset = 0
+
+rtc = RTC()
 led = Pin("LED", Pin.OUT)
 motors = {}
 speaker = None
@@ -34,6 +41,36 @@ def get_internal_temperature():
     # Typically, Vbe = 0.706V at 27 degrees C, with a slope of -1.721mV (0.001721) per degree.
     temperature = 27 - (reading - 0.706) / 0.001721
     return temperature
+
+
+def set_rtc_time():
+    # Get the external time reference
+    global msec_offset
+    NTP_QUERY = bytearray(48)
+    NTP_QUERY[0] = 0x1B
+    addr = socket.getaddrinfo(NTP_HOST, 123)[0][-1]
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.settimeout(1)
+        s.sendto(NTP_QUERY, addr)
+        msg = s.recv(48)
+    finally:
+        s.close()
+
+    # Set our internal time
+    val = struct.unpack("!I", msg[40:44])[0]
+    tm = val - NTP_DELTA
+    t = gmtime(tm)
+    rtc.datetime((t[0], t[1], t[2], t[6] + 1, t[3], t[4], t[5], 0))
+    msec_offset = ticks_ms()
+
+
+def get_iso_datetime():
+    year, month, day, dow, hour, mins, secs, _subsec = rtc.datetime()
+    subsec = (ticks_ms() - msec_offset) % 1000
+    return "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}".format(
+        year, month, day, hour, mins, secs, subsec
+    )
 
 
 def init_motor(number):
