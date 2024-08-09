@@ -1,4 +1,8 @@
+import json
+
+import hardware  # type: ignore
 import utime
+import wifi  # type: ignore
 from detectors import (  # type: ignore
     AGCConverter,
     AnalogueDetector,
@@ -10,6 +14,9 @@ from detectors import (  # type: ignore
     SchmittConverter,
     SimpleThresholdConverter,
 )
+from umqtt.simple import MQTTClient
+
+MQTT_BROKER = "192.168.88.117"
 
 COUNT_THRESHOLD = 50
 CLEAR_THRESHOLD = 60
@@ -152,16 +159,31 @@ sensors["POINT_DIVERGE_P"], sensors["POINT_DIVERGE_C"] = create_wagon_sensors(28
 
 blocks = [0, 0, 0, 0]
 
-while True:
-    # monitor wagon counters
-    is_moving_left = True
-    for key in sensors:
-        if key.endswith("_C"):
-            event = sensors[key].check_event()
-            if event == BehaviourEvent.TRIGGER:
-                move_wagon(key, True, is_moving_left)
-            elif event == BehaviourEvent.RELEASE:
-                move_wagon(key, False, is_moving_left)
+wifi.connect_with_saved_credentials()
+qt = MQTTClient("phrottle", MQTT_BROKER, keepalive=60 * 60 * 3)
+qt.connect()
 
-    print(display(sensors, blocks), end="")
-    utime.sleep(0.01)
+try:
+    while True:
+        payload = {"temperature": hardware.get_internal_temperature()}
+
+        # monitor wagon counters
+        is_moving_left = True
+        for key in sensors:
+            if key.endswith("_C"):
+                event = sensors[key].check_event()
+                if event == BehaviourEvent.TRIGGER:
+                    move_wagon(key, True, is_moving_left)
+                elif event == BehaviourEvent.RELEASE:
+                    move_wagon(key, False, is_moving_left)
+
+                value = sensors[key].parent_behaviour.parent_behaviour.detector.value()
+                payload[key] = value
+
+        qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
+
+        # print(display(sensors, blocks), end="")
+        utime.sleep(0.01)
+
+finally:
+    qt.disconnect()

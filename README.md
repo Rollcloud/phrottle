@@ -35,6 +35,10 @@ With thanks to [SoongJr](https://github.com/SoongJr/pi-pico/blob/main/README.md)
 
 Use the Pico Device Controller to run `main.py`, `server.py`, or one of the sandbox scripts.
 
+## Libraries
+
+The external library `umqtt.simple` is required to be loaded onto the Pico.
+
 ## Attributions
 
 - Lever Icon: [Gambling icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/gambling)
