@@ -28,8 +28,12 @@ if mpremote.__version__ >= "1.24.0":
     exit(1)
 
 
-def mpremote_fs_cp(source: Path, dest: Path):
-    """Copy source to dest using mpremote fs cp."""
+def mpremote_fs_cp(source: Path, dest: Path) -> bool:
+    """
+    Copy source to dest using mpremote fs cp.
+
+    Returns True if the source is a file for copying.
+    """
     if source.is_dir():
         if source.parent != SOURCE:
             # Create the parent directory of the source file
@@ -42,7 +46,11 @@ def mpremote_fs_cp(source: Path, dest: Path):
             settings["files"] = {}
         settings["files"][source.as_posix()] = int(source.stat().st_mtime)
 
+        return True
+    return False
 
+
+copy_counter = 0
 # Recursively iterate over all files in the source directory
 for source_file in SOURCE.rglob(search):
     # Calculate the relative path of the source file
@@ -54,11 +62,14 @@ for source_file in SOURCE.rglob(search):
     source_modified = int(source_file.stat().st_mtime)
     dest_modified = settings.get("files", {}).get(source_file.as_posix(), 0)
     if source_modified > dest_modified:
-        mpremote_fs_cp(source_file, dest_file)
+        copied = mpremote_fs_cp(source_file, dest_file)
+        if copied:
+            copy_counter += 1
     else:
         print(f"Skipping {source_file}")
 
 with SETTINGS.open("w") as f:
     yaml.dump(settings, f)
 
+print(f"Copied {copy_counter} files.")
 print("Done.")
