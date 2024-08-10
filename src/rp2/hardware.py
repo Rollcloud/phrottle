@@ -43,7 +43,7 @@ def get_internal_temperature():
     return temperature
 
 
-def set_rtc_time():
+def set_rtc_time() -> None:
     # Get the external time reference
     global msec_offset
     NTP_QUERY = bytearray(48)
@@ -65,8 +65,8 @@ def set_rtc_time():
     msec_offset = ticks_ms()
 
 
-def get_iso_datetime():
-    year, month, day, dow, hour, mins, secs, _subsec = rtc.datetime()
+def get_iso_datetime() -> str:
+    year, month, day, _dow, hour, mins, secs, _subsec = rtc.datetime()
     subsec = (ticks_ms() - msec_offset) % 1000
     return "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}".format(
         year, month, day, hour, mins, secs, subsec

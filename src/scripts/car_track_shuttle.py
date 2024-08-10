@@ -28,7 +28,7 @@ from detectors import (  # type: ignore
 )
 from hardware import get_internal_temperature, get_iso_datetime, led, set_rtc_time  # type: ignore
 from layout import AbsoluteDirection as Facing  # type: ignore
-from umqtt.simple import MQTTClient
+from umqtt.simple import MQTTClient  # type: ignore
 
 # Set up the locomotive
 loco.orientation = Facing.RIGHT
@@ -75,7 +75,7 @@ def getBlockEntrySensor(block_number: int, is_moving_left: bool) -> str:
         if block_numbers[connection_index] == block_number:
             return key
 
-    available_connections = ", ".join(list(connections.values()))
+    available_connections = ", ".join(map(str, connections.values()))
     raise ValueError(
         f"Block number {block_number} not found in connections\nOptions are: [{available_connections}]"
     )

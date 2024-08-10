@@ -17,6 +17,7 @@ select = [
     "D",    # Docstrings
     "D401", # First line should be in imperative mood
     "D213", # Multi-line docstring summary should start at the second line
+    "C",    # Complexity
 ]
 ignore = [
     "D100", # Missing docstring in public module
