@@ -12,6 +12,7 @@ Commands:
 - DIS: Display the state of the sensors and blocks
 """
 
+import gc
 import json
 
 import utime
@@ -262,14 +263,16 @@ if __name__ == "__main__":
     try:
         while True:
             loop_start = utime.ticks_ms()
+            timestamp = get_iso_datetime()
 
             is_moving_left = loco.movement_direction() == Facing.LEFT
 
             is_running = run_train(is_running, is_moving_left, blocks, sensors)
 
             # Update sensor data
-            timestamps.append(get_iso_datetime())
+            timestamps.append(timestamp)
             sensor_data.append({})
+            sensor_data[-1]["loop_start"] = loop_start
 
             # Monitor end of track
             event = sensors["EOT_P"].check_event()
@@ -294,6 +297,11 @@ if __name__ == "__main__":
             # Show display
             print(display(sensors, blocks), end="")
 
+            # Periodically free memory
+            if len(sensor_data) % 50 == 0:
+                gc.collect()
+
+            # Loop timing
             loop_end = utime.ticks_ms()
             loop_time = utime.ticks_diff(loop_end, loop_start)
             loop_delay = min_trigger_duration - loop_time
