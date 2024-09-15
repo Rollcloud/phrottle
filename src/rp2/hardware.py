@@ -51,7 +51,7 @@ def set_rtc_time() -> None:
     addr = socket.getaddrinfo(NTP_HOST, 123)[0][-1]
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        s.settimeout(1)
+        s.settimeout(10)
         s.sendto(NTP_QUERY, addr)
         msg = s.recv(48)
     finally:
