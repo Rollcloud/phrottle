@@ -45,9 +45,9 @@ is_running = False
 stop_when = (-1, 0)
 
 connections = {
-    "POINT_BASE_C": (0, 1),
-    "POINT_THROUGH_C": (1, 2),
-    "POINT_DIVERGE_C": (1, 3),
+    "POINT_BASE_C": (0, 1),  # EOT to Point
+    "POINT_THROUGH_C": (1, 2),  # Point to Through route
+    "POINT_DIVERGE_C": (1, 3),  # Point to Diverging route
 }
 
 # store sensor data
