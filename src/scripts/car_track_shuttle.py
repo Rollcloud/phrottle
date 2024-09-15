@@ -31,6 +31,8 @@ from hardware import get_internal_temperature, get_iso_datetime, led, set_rtc_ti
 from layout import AbsoluteDirection as Facing  # type: ignore
 from umqtt.simple import MQTTClient  # type: ignore
 
+MONITOR = False
+
 # Set up the locomotive
 loco.orientation = Facing.RIGHT
 loco.profile["max_speed"] = 1  # set really slow for shuttle tests
@@ -50,7 +52,7 @@ connections = {
 
 # store sensor data
 MQTT_BROKER = "192.168.88.117"
-qt = MQTTClient("pico", MQTT_BROKER, keepalive=300)
+qt = MQTTClient("pico", MQTT_BROKER, keepalive=300) if MONITOR else None
 timestamps = []
 sensor_data = []
 
@@ -58,15 +60,23 @@ sensor_data = []
 def send_sensor_data():
     global timestamps, sensor_data
     num_samples = len(timestamps)
-    qt.connect()
-    for timestamp, data in zip(timestamps, sensor_data):
-        payload = {"timestamp": timestamp, "temperature": get_internal_temperature()}
-        payload.update(data)
-        qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
-    qt.disconnect()
-    timestamps = []
-    sensor_data = []
-    print(f"Sent {num_samples} samples")
+    try:
+        qt.connect()
+        for timestamp, data in zip(timestamps, sensor_data):
+            payload = {"timestamp": timestamp, "temperature": get_internal_temperature()}
+            payload.update(data)
+            qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
+        qt.disconnect()
+        timestamps = []
+        sensor_data = []
+        print(f"Sent {num_samples} samples")
+    except OSError as e:
+        if e.args[0] == 103:
+            # connection aborted, server most not available
+            timestamps = []
+            sensor_data = []
+        else:
+            raise e
 
 
 def getBlockEntrySensor(block_number: int, is_moving_left: bool) -> str:
@@ -188,12 +198,12 @@ def run_train(is_running, is_moving_left, blocks, sensors):
         if not is_waiting_for(5000):
             loco.stop()
             print("Move Timed Out")
-            send_sensor_data()
+            send_sensor_data() if MONITOR else None
             is_running = False
         if blocks[block_number] >= wagon_count and not sensors[block_entry_sensor].is_present():
             loco.stop()
             print("Move Completed")
-            send_sensor_data()
+            send_sensor_data() if MONITOR else None
             wait_until = None
             is_running = False
 
@@ -255,7 +265,8 @@ if __name__ == "__main__":
 
     print("Track Car Shuttle Test")
 
-    set_rtc_time()
+    if MONITOR:
+        set_rtc_time()
 
     print("Min trigger interval:", min_trigger_interval, "ms")
     print("Min trigger duration:", min_trigger_duration, "ms")
@@ -270,9 +281,10 @@ if __name__ == "__main__":
             is_running = run_train(is_running, is_moving_left, blocks, sensors)
 
             # Update sensor data
-            timestamps.append(timestamp)
-            sensor_data.append({})
-            sensor_data[-1]["loop_start"] = loop_start
+            if MONITOR:
+                timestamps.append(timestamp)
+                sensor_data.append({})
+                sensor_data[-1]["loop_start"] = loop_start
 
             # Monitor end of track
             event = sensors["EOT_P"].check_event()
@@ -289,7 +301,7 @@ if __name__ == "__main__":
                         move_wagon(blocks, connections, key, True, is_moving_left)
                     elif event == BehaviourEvent.RELEASE:
                         move_wagon(blocks, connections, key, False, is_moving_left)
-                    if is_running:
+                    if MONITOR and is_running:
                         sensor_data[-1][key] = sensors[
                             key
                         ].parent_behaviour.parent_behaviour.detector.value()
@@ -298,7 +310,7 @@ if __name__ == "__main__":
             print(display(sensors, blocks), end="")
 
             # Periodically free memory
-            if len(sensor_data) % 50 == 0:
+            if MONITOR and len(sensor_data) % 50 == 0:
                 gc.collect()
 
             # Loop timing
