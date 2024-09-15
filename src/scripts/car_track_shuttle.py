@@ -32,6 +32,7 @@ from layout import AbsoluteDirection as Facing  # type: ignore
 from umqtt.simple import MQTTClient  # type: ignore
 
 MONITOR = False
+MOVEMENT_TIMEOUT = 5000 if MONITOR else 10000  # milliseconds
 
 # Set up the locomotive
 loco.orientation = Facing.RIGHT
@@ -205,7 +206,7 @@ def run_train(is_running, is_moving_left, blocks, sensors):
     if is_running:
         block_number, wagon_count = stop_when
         block_entry_sensor = getBlockEntrySensor(block_number, is_moving_left)
-        if not is_waiting_for(5000):
+        if not is_waiting_for(MOVEMENT_TIMEOUT):
             loco.stop()
             print("Move Timed Out")
             send_sensor_data() if MONITOR else None
