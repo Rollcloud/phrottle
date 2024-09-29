@@ -21,13 +21,11 @@ from detectors import (  # type: ignore
 from layout import AbsoluteDirection as Facing  # type: ignore
 from layout import Locomotive, Point  # type: ignore
 
-COUNT_THRESHOLD = 10
-CLEAR_THRESHOLD = 20
 FOUND_THRESHOLD = 20
 
 MAX_SPEED = 500  # mm/s
 MIN_WAGON_LENGTH = 25  # 1 inch in mm
-REFLECTOR_LENGTH = 5  # mm
+REFLECTOR_LENGTH = 5 / 2  # mm
 
 min_trigger_interval = int(MIN_WAGON_LENGTH / MAX_SPEED * 1000)  # 83 ms
 min_trigger_duration = int(REFLECTOR_LENGTH / MAX_SPEED * 1000)  # 17 ms
@@ -76,8 +74,8 @@ def create_wagon_sensors(gpio_number):
     # Wagon counter
     wagon_counter = SchmittConverter(
         wagon_detector,
-        trigger_threshold=config[str(gpio_number)]["reflect"] + COUNT_THRESHOLD,
-        release_threshold=config[str(gpio_number)]["reflect"] + CLEAR_THRESHOLD,
+        trigger_threshold=config[str(gpio_number)]["reflect"],
+        release_threshold=config[str(gpio_number)]["open"],
     )
     wagon_count_debouncer = DebounceBehaviour(wagon_counter, debounce_time_ms=min_trigger_interval)
     wagon_count_events = EventOnChangeBehaviour(wagon_count_debouncer)

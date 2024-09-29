@@ -10,8 +10,8 @@ from detectors import (  # type: ignore
     SimpleThresholdConverter,
 )
 
-COUNT_THRESHOLD = 50
-CLEAR_THRESHOLD = 60
+COUNT_THRESHOLD = 45
+CLEAR_THRESHOLD = 160
 FOUND_THRESHOLD = 20
 
 MAX_SPEED = 500  # mm/s
