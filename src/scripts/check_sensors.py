@@ -18,6 +18,8 @@ MAX_SPEED = 500  # mm/s
 MIN_WAGON_LENGTH = 25  # 1 inch in mm
 REFLECTOR_LENGTH = 5  # mm
 
+BACKFEED = "\033[F"  # go up a line in ascii
+
 min_trigger_interval = int(MIN_WAGON_LENGTH / MAX_SPEED * 1000)  # 83 ms
 min_trigger_duration = int(REFLECTOR_LENGTH / MAX_SPEED * 1000)  # 17 ms
 
@@ -78,6 +80,10 @@ while True:
     # for sensors ending in P, print the sensor value
     for sensor_name, sensor in sensors.items():
         if sensor_name.endswith("_P"):
-            print(f"{sensor_name}: {sensor.is_present()}")
+            sensor_present = "1" if sensor.is_present() else "0"
+            print(f"{sensor_name}: {sensor_present}")
+        elif sensor_name.endswith("_C"):
+            print(f"{sensor_name}: {sensor.value():>3}")
     print("----------------")
+    print(BACKFEED * 9, end="")
     utime.sleep(0.1)
