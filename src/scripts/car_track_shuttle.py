@@ -13,10 +13,17 @@ Commands:
 """
 
 import gc
-import json
 
 import utime
 import wifi  # type: ignore
+from commands import (  # type: ignore
+    check_and_change_point,
+    display,
+    getBlockEntrySensor,
+    init_mqtt,
+    move_wagon,
+    send_sensor_data,
+)
 from definitions import (  # type: ignore
     loco,
     min_trigger_duration,
@@ -27,9 +34,10 @@ from definitions import (  # type: ignore
 from detectors import (  # type: ignore
     BehaviourEvent,
 )
-from hardware import get_internal_temperature, get_iso_datetime, led, set_rtc_time  # type: ignore
+
+# type: ignore
+from hardware import get_iso_datetime, led, set_rtc_time  # type: ignore
 from layout import AbsoluteDirection as Facing  # type: ignore
-from umqtt.simple import MQTTClient  # type: ignore
 
 MONITOR = False
 MOVEMENT_TIMEOUT = 5000 if MONITOR else 10000  # milliseconds
@@ -52,132 +60,11 @@ connections = {
 }
 
 # store sensor data
-MQTT_BROKER = "192.168.88.117"
-qt = MQTTClient("pico", MQTT_BROKER, keepalive=300) if MONITOR else None
+if MONITOR:
+    init_mqtt()
+
 timestamps = []
 sensor_data = []
-
-
-def send_sensor_data():
-    global timestamps, sensor_data
-    num_samples = len(timestamps)
-    try:
-        qt.connect()
-        for timestamp, data in zip(timestamps, sensor_data):
-            payload = {"timestamp": timestamp, "temperature": get_internal_temperature()}
-            payload.update(data)
-            qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
-        qt.disconnect()
-        timestamps = []
-        sensor_data = []
-        print(f"Sent {num_samples} samples")
-    except OSError as e:
-        if e.args[0] == 103:
-            # connection aborted, server most not available
-            timestamps = []
-            sensor_data = []
-        else:
-            raise e
-
-
-def getBlockEntrySensor(block_number: int, is_moving_left: bool) -> str:
-    """Get the sensor key for sensor that will be triggered when the block is entered."""
-    connection_index = 0 if is_moving_left else 1
-    for key, block_numbers in connections.items():
-        if block_numbers[connection_index] == block_number:
-            return key
-
-    available_connections = ", ".join(
-        map(str, sorted({connection[connection_index] for connection in connections.values()}))
-    )
-    message = (
-        "Block number {number} not found in connections\n"
-        "Choose from block numbers: [{options}]\n"
-        "Or check locomotive direction"
-    )
-    raise ValueError(
-        message.format(
-            number=block_number,
-            options=available_connections,
-        )
-    )
-
-
-def move_wagon(
-    blocks, connections, sensor_key: str, is_triggered: bool, is_moving_left: bool
-) -> None:
-    """Move a wagon based on the sensor key and trigger state."""
-    if is_triggered:
-        block_number = connections[sensor_key][0 if is_moving_left else 1]
-        blocks[block_number] += 1
-    else:
-        # is released
-        block_number = connections[sensor_key][1 if is_moving_left else 0]
-        blocks[block_number] -= 1
-
-
-def check_and_change_point(diverge=False, toggle=False):
-    """Check if there are any wagons on the point and change the point."""
-    if (
-        blocks[1] > 0
-        # or sensors["POINT_BASE_P"].is_present()
-        # or sensors["POINT_THROUGH_P"].is_present()
-        # or sensors["POINT_DIVERGE_P"].is_present()
-    ):
-        print("Wagon present, cannot toggle point.")
-    else:
-        if toggle:
-            print("Toggling point")
-            point.toggle()
-        else:
-            print("Changing point to", "diverge" if diverge else "through")
-            point.change(diverge)
-
-
-def display(sensors, blocks):
-    """Show a small diagram of sensor states in the console."""
-    hide_cursor = "\033[?25l"
-    show_cursor = "\033[?25h"
-    start_of_previous_line = "\033[F"
-    red = "\033[91m"
-    reset = "\033[0m"
-
-    sensor_replacements = {
-        "A": "EOT_P",
-        "B": "POINT_BASE_P",
-        "C": "POINT_THROUGH_P",
-        "D": "POINT_DIVERGE_P",
-    }
-
-    # fmt: off
-    track_diagram = (
-        "            /C--2--\n"
-        "  |A--0--B=1       \n"
-        "            \D--3--\n"
-    )
-    # fmt: on
-
-    block_replacements = [
-        red + str(abs(block)) + reset if block < 0 else str(block) for block in blocks
-    ]
-    # replace digits with {digits} to avoid replacing the same number twice
-    track_diagram_format = "".join(
-        f"{{{char}}}" if char.isdigit() else char for char in track_diagram
-    )
-
-    track_diagram = track_diagram_format.format(*block_replacements)
-
-    for key, sensor_key in sensor_replacements.items():
-        track_diagram = track_diagram.replace(key, "!" if sensors[sensor_key].is_present() else ":")
-
-    return "".join(
-        [
-            hide_cursor,
-            track_diagram,
-            start_of_previous_line * 3,
-            show_cursor,
-        ]
-    )
 
 
 blocks = [0, 0, 0, 0]
@@ -205,16 +92,16 @@ def run_train(is_running, is_moving_left, blocks, sensors):
 
     if is_running:
         block_number, wagon_count = stop_when
-        block_entry_sensor = getBlockEntrySensor(block_number, is_moving_left)
+        block_entry_sensor = getBlockEntrySensor(connections, block_number, is_moving_left)
         if not is_waiting_for(MOVEMENT_TIMEOUT):
             loco.stop()
             print("Move Timed Out")
-            send_sensor_data() if MONITOR else None
+            send_sensor_data(timestamps, sensor_data) if MONITOR else None
             is_running = False
         if blocks[block_number] >= wagon_count and not sensors[block_entry_sensor].is_present():
             loco.stop()
             print("Move Completed")
-            send_sensor_data() if MONITOR else None
+            send_sensor_data(timestamps, sensor_data) if MONITOR else None
             wait_until = None
             is_running = False
 
@@ -239,7 +126,7 @@ def run_train(is_running, is_moving_left, blocks, sensors):
                 print("Invalid command")
                 return
             diverge = command[1] == "1"
-            check_and_change_point(diverge=diverge)
+            check_and_change_point(blocks, sensors, diverge=diverge)
 
         elif command[0].upper() == "MOV":
             if len(command) != 4:
@@ -309,9 +196,9 @@ if __name__ == "__main__":
                 if key.endswith("_C"):
                     event = sensors[key].check_event()
                     if event == BehaviourEvent.TRIGGER:
-                        move_wagon(blocks, connections, key, True, is_moving_left)
+                        blocks = move_wagon(blocks, connections, key, True, is_moving_left)
                     elif event == BehaviourEvent.RELEASE:
-                        move_wagon(blocks, connections, key, False, is_moving_left)
+                        blocks = move_wagon(blocks, connections, key, False, is_moving_left)
                     if MONITOR and is_running:
                         sensor_data[-1][key] = sensors[
                             key
