@@ -35,10 +35,16 @@ def mpremote_fs_cp(source: Path, dest: Path) -> bool:
     Returns True if the source is a file for copying.
     """
     if source.is_dir():
+        # Create the parent directory of the source file
         if source.parent != SOURCE:
-            # Create the parent directory of the source file
-            print(f"Creating directory {dest.parent}")
-            subprocess.run(f"mpremote fs mkdir {dest.parent}", shell=True)
+            # Check if the directory exists
+            result = subprocess.run(
+                f"mpremote fs ls {dest.parent}", shell=True, capture_output=True, text=True
+            )
+            if result.returncode != 0:
+                # Directory does not exist, create it
+                print(f"Creating directory {dest.parent}")
+                subprocess.run(f"mpremote fs mkdir {dest.parent}", shell=True)
     else:
         # print(f"Copying {source_file} to {dest_file}")
         subprocess.run(f"mpremote fs cp {source} {dest}", check=True, shell=True)
@@ -66,7 +72,8 @@ for source_file in SOURCE.rglob(search):
         if copied:
             copy_counter += 1
     else:
-        print(f"Skipping {source_file}")
+        # skipping file
+        pass
 
 with SETTINGS.open("w") as f:
     yaml.dump(settings, f)
