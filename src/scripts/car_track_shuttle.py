@@ -88,12 +88,12 @@ def getBlockEntrySensor(block_number: int, is_moving_left: bool) -> str:
             return key
 
     available_connections = ", ".join(
-        map(str, sorted([connection[connection_index] for connection in connections.values()]))
+        map(str, sorted({connection[connection_index] for connection in connections.values()}))
     )
     message = (
         "Block number {number} not found in connections\n"
-        "Options are: [{options}]\n"
-        "Check locomotive direction"
+        "Choose from block numbers: [{options}]\n"
+        "Or check locomotive direction"
     )
     raise ValueError(
         message.format(
