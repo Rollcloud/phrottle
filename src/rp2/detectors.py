@@ -23,8 +23,16 @@ class BehaviourEvent:
 class Detector:
     """A base class for detectors providing common functionality."""
 
+    def __init__(self) -> None:
+        self._value = None
+
+    @property
     def value(self) -> int:
         """Return the detector value."""
+        return self._value  # type: ignore
+
+    def read(self) -> int:
+        """Read and return the detector value."""
         raise NotImplementedError
 
 
@@ -33,12 +41,14 @@ class DigitalDetector(Detector):
 
     def __init__(self, gpio_number) -> None:
         """Initialise a digital sensor connected to the provided pin."""
+        super().__init__()
         self.gpio_number = gpio_number
         self._sensor = Pin(gpio_number, Pin.IN)
 
-    def value(self) -> int:
-        """Return the pin value."""
-        return self._sensor.value()
+    def read(self) -> int:
+        """Read and return the pin value."""
+        self._value = self._sensor.value()
+        return self._value
 
 
 class AnalogueDetector(Detector):
@@ -46,12 +56,14 @@ class AnalogueDetector(Detector):
 
     def __init__(self, gpio_number) -> None:
         """Initialise an analogue sensor detector connected to the provided pin."""
+        super().__init__()
         self.gpio_number = gpio_number
         self._sensor = ADC(gpio_number)
 
-    def value(self) -> int:
-        """Return the ADC value in bits."""
-        return self._sensor.read_u16() >> 6  # 10-bit ADC
+    def read(self) -> int:
+        """Read and return the ADC value in bits."""
+        self._value = self._sensor.read_u16() >> 6  # 10-bit ADC
+        return self._value
 
 
 class Converter:
@@ -59,7 +71,7 @@ class Converter:
 
     def value(self) -> int:
         """Return the detector's value."""
-        return self.detector.value()
+        return self.detector.value
 
     def is_present(self) -> bool:
         """Return whether an object is present."""
@@ -85,9 +97,9 @@ class SimpleThresholdConverter(Converter):
         Output is inverted if present_on_high is False.
         """
         if self.present_on_high:
-            return self.detector.value() >= self.threshold
+            return self.detector.value >= self.threshold
         else:
-            return self.detector.value() <= self.threshold
+            return self.detector.value <= self.threshold
 
 
 class SchmittConverter(Converter):
@@ -107,7 +119,7 @@ class SchmittConverter(Converter):
 
     def is_present(self) -> bool:
         """Return whether an object is present using a Schmitt trigger."""
-        value = self.detector.value()
+        value = self.detector.value
         if value < self.trigger_threshold:
             self._is_present = True
         elif value > self.release_threshold:
@@ -122,7 +134,7 @@ class AGCConverter(Converter):
     def __init__(self, detector: Detector, base_threshold=10, gain: float = 1.0) -> None:
         """Initialise a converter with AGC."""
         self.detector = detector
-        self.base = self.detector.value()
+        self.base = self.detector.value
         self.base_threshold = base_threshold
         self.gain = gain
 
@@ -136,7 +148,7 @@ class AGCConverter(Converter):
 
         Returns True if an object is present, False otherwise.
         """
-        value = self.detector.value()
+        value = self.detector.value
         if value < self.base - self.base_threshold:
             return True
         else:
@@ -152,9 +164,13 @@ class AGCConverter(Converter):
 class Behaviour:
     """A base class for behaviours providing common functionality."""
 
+    def __init__(self, parent_behaviour: "Behaviour" | Converter) -> None:
+        """Initialise an inverter behaviour."""
+        self.parent_behaviour = parent_behaviour
+
     def value(self) -> int:
         """Return the parent's value."""
-        return self.parent_behaviour.value()
+        return self.parent_behaviour.value
 
     def is_present(self) -> bool:
         """Return whether an object is present."""
@@ -165,10 +181,6 @@ class Behaviour:
 
 class InverterBehaviour(Behaviour):
     """Invert the presence state of a detector."""
-
-    def __init__(self, parent_behaviour: Behaviour | Converter) -> None:
-        """Initialise an inverter behaviour."""
-        self.parent_behaviour = parent_behaviour
 
     def is_present(self) -> bool:
         """Return the inverted presence state of the parent behaviour."""
@@ -216,7 +228,7 @@ class EventOnChangeBehaviour(Behaviour):
         return self.parent_behaviour.is_present()
 
     def check_event(self) -> int:
-        """Check for an event."""
+        """Check for an event. Only call once per loop."""
         is_present = self.parent_behaviour.is_present()
         event = BehaviourEvent.NONE
         if is_present != self._last_present:
@@ -235,7 +247,7 @@ if __name__ == "__main__":
 
     while True:
         is_present = wagon_converter.is_present()
-        value = wagon_converter.value()
+        value = wagon_converter.value
 
         led.value(is_present)
 
