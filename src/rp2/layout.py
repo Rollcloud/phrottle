@@ -107,10 +107,11 @@ class Locomotive:
 
     def accelerate(self, amount: float = 0.2):
         """Accelerate at amount/s^2 where positive corresponds to forward."""
-        if self.velocity < 0:
-            self.velocity = max(self.velocity + amount, -self.profile.get("max_speed", 100))
+        new_velocity = self.velocity + amount
+        if new_velocity < 0:
+            self.velocity = max(new_velocity, -self.profile.get("max_speed", 100))
         else:
-            self.velocity = min(self.velocity + amount, self.profile.get("max_speed", 100))
+            self.velocity = min(new_velocity, self.profile.get("max_speed", 100))
 
         if self.velocity > 0:
             self.velocity_direction = RelativeDirection.FORWARD
