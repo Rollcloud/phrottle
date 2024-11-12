@@ -71,7 +71,7 @@ class Converter:
 
     def value(self) -> int:
         """Return the detector's value."""
-        return self.detector.value
+        return self.detector._value
 
     def is_present(self) -> bool:
         """Return whether an object is present."""
@@ -119,7 +119,7 @@ class SchmittConverter(Converter):
 
     def is_present(self) -> bool:
         """Return whether an object is present using a Schmitt trigger."""
-        value = self.detector.value
+        value = self.value()
         if value < self.trigger_threshold:
             self._is_present = True
         elif value > self.release_threshold:
