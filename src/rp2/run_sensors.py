@@ -8,10 +8,10 @@ import json
 from time import sleep_ms
 
 import wifi
-from detectors import AnalogueDetector, SchmittConverter
+from detectors import AnalogueDetector, SchmittConverter, EventOnChangeBehaviour
 from hardware import flash_led, get_iso_datetime, set_rtc_time
 from layout import AbsoluteDirection as facing
-from layout import Locomotive
+from layout import Evaluator, Locomotive, TrainDetector
 from machine import Pin
 from umqtt.simple import MQTTClient
 
@@ -24,16 +24,24 @@ button_left = Pin(13, Pin.IN, Pin.PULL_UP)
 
 
 def create_sensor(pin, trigger=100, release=250):
-    return SchmittConverter(
-        AnalogueDetector(pin), trigger_threshold=trigger, release_threshold=release
+    return EventOnChangeBehaviour(
+        SchmittConverter(
+            AnalogueDetector(pin), trigger_threshold=trigger, release_threshold=release
+        )
     )
-
 
 sensors = {
     "POINT_BASE": create_sensor(26),
     "POINT_THROUGH": create_sensor(27),
     "POINT_DIVERGE": create_sensor(28),
 }
+
+eval_base = Evaluator("POINT_BASE")
+eval_through = Evaluator("POINT_THROUGH")
+eval_diverge = Evaluator("POINT_DIVERGE")
+
+through_detector = TrainDetector("POINT_THROUGH", eval_base, eval_through)
+diverge_detector = TrainDetector("POINT_DIVERGE", eval_base, eval_diverge)
 
 
 def control_train(acceleration=100):
@@ -53,6 +61,9 @@ def control_train(acceleration=100):
 def read_sensors():
     for sensor in sensors.values():
         sensor.detector.read()
+        if sensor.check_event():
+
+
     data = {
         "timestamp": get_iso_datetime(),
         "engine_velocity": engine.velocity * 10,  # for scaling against light sensors
