@@ -8,20 +8,13 @@ CONVERSION_FACTOR = (1 << ADC_ENOB) / (1 << ADC_OUTPUT_BITS)
 class Lever:
     """A class representing a physical lever connected to an ADC pin."""
 
-    PIN_ADC_MAP = {
-        26: 0,
-        27: 1,
-        28: 2,
-    }
-
     def __init__(self, pin, max_raw=512, max_out=100, filter_alpha=0.0) -> None:
         """Initialise Lever connected to the provided pin."""
         self._pin = pin
         self._max_raw = max_raw
         self._max_out = max_out
         self._filter_alpha = filter_alpha
-        machine.Pin(pin, machine.Pin.IN)
-        self._sensor = machine.ADC(Lever.PIN_ADC_MAP[pin])
+        self._sensor = machine.ADC(machine.Pin(pin, machine.Pin.IN))
 
     def _filter(self, x, alpha: float) -> float:
         try:

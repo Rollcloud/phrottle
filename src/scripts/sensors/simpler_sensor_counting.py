@@ -14,7 +14,9 @@ detected = [False, False]
 
 def init_sensors(pins: List[int]) -> None:
     """Initialise the sensors."""
-    return [ADC(gpio_number) for gpio_number in pins]
+    # Include GP in the ADC initialisation
+    # See https://github.com/orgs/micropython/discussions/13488#discussioncomment-8231669
+    return [ADC(f"GP{gpio_number}") for gpio_number in pins]
 
 
 def read_sensors(sensors: List[ADC]) -> List[int]:
@@ -24,7 +26,7 @@ def read_sensors(sensors: List[ADC]) -> List[int]:
 
 
 if __name__ == "__main__":
-    sensors = init_sensors([26, 28])
+    sensors = init_sensors([27, 28])
 
     while True:
         values = read_sensors(sensors)

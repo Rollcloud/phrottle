@@ -5,7 +5,7 @@ from SimplyRobotics import PIOServo
 servo = PIOServo(18)
 servo.registerServo()
 
-sensor = ADC(0)
+sensor = ADC("GP0")
 
 
 def read_sensor():

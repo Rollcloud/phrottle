@@ -33,7 +33,7 @@ def flash_led(t: float = 0.12, n: int = 1):
 
 def get_internal_temperature():
     """Read the onboard temperature sensor."""
-    temperature_sensor = ADC(4)
+    temperature_sensor = ADC("GP4")
 
     reading = temperature_sensor.read_u16() * CONVERSION_FACTOR
 
