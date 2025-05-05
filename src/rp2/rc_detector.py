@@ -191,7 +191,9 @@ if __name__ == "__main__":
             scale=0.001,
             rulers=[detector.calibration - detector.threshold_us],
         )
-        print(f"{detector.calibration/1000: 6.3f} {detector.value()/1000: 6.3f} ms {icon}{graph}")
+        print(
+            f"{detector.calibration / 1000: 6.3f} {detector.value() / 1000: 6.3f} ms {icon}{graph}"
+        )
 
     def sensors_loop():
         global detector
