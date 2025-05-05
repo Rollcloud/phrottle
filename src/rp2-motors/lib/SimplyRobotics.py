@@ -34,9 +34,9 @@ API:
               stepper 1 should be connected to motors 3 and 4
 """
 
-from time import sleep, sleep_ms, sleep_us, ticks_us
 
-from machine import ADC, PWM, Pin, time_pulse_us
+from machine import PWM, Pin
+
 from rp2 import PIO, StateMachine, asm_pio
 
 """
