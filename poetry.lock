@@ -23,6 +23,30 @@ files = [
 ]
 
 [[package]]
+name = "micropython-rp2-rpi-pico2-w-stubs"
+version = "1.25.0.post1"
+description = "MicroPython stubs"
+optional = false
+python-versions = "*"
+files = [
+    {file = "micropython_rp2_rpi_pico2_w_stubs-1.25.0.post1-py2.py3-none-any.whl", hash = "sha256:7372d755de269f49b0cdc2be0c0a55bfe53d97ca7dfc5418b8b3db83b0b1927b"},
+    {file = "micropython_rp2_rpi_pico2_w_stubs-1.25.0.post1.tar.gz", hash = "sha256:bad4339096b26bfd88cd29449d57eb0933b9b2fc9a98749c2a946c0247d1f6ab"},
+]
+
+[package.dependencies]
+micropython-stdlib-stubs = ">=1.24.0"
+
+[[package]]
+name = "micropython-stdlib-stubs"
+version = "1.24.1.post2"
+description = "Micropython stdlib is a reduced and augmented copy of typeshed's stdlib for use by MicroPython stub packages"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "micropython_stdlib_stubs-1.24.1.post2-py3-none-any.whl", hash = "sha256:1ef3b2cf4f84cd8a96bf05184c09498a246b87435bcea0235f3b49861a1d1cd1"},
+]
+
+[[package]]
 name = "mpremote"
 version = "1.25.0"
 description = "Tool for interacting remotely with MicroPython devices"
@@ -188,4 +212,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "86547c91cf4e2e4c478a93a851018a5103e723115878d21131f99ed465017dc7"
+content-hash = "0bf275b09298cfc6f199aeb358e84173871e571425c1fcde79a0e419117f8862"
