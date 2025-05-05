@@ -46,7 +46,18 @@ Use the Pico Device Controller to run `main.py`, `server.py`, or one of the sand
 
 ## Libraries
 
-The external library `umqtt.simple` is required to be loaded onto the Pico.
+The external library `umqtt.simple` is required to be loaded onto the Pico for data-logging work.
+
+```sh
+mpremote mip install umqtt.simple
+```
+
+If a typing import error such as `ImportError: no module named 'typing'`,
+then install a mock typing module such as https://micropython-stubs.readthedocs.io/en/main/typing_mpy.html#install-the-typing-modules-to-your-mcu
+
+```sh
+mpremote mip install github:josverl/micropython-stubs/mip/typing.mpy
+```
 
 ## Attributions
 
