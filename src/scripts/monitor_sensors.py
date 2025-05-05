@@ -1,10 +1,10 @@
 import json
 
 import utime
-import wifi  # type: ignore
+import wifi
 from detectors import (
     AGCConverter,
-    AnalogueDetector,  # type: ignore
+    AnalogueDetector,
     BehaviourEvent,
     DebounceBehaviour,
     DigitalDetector,

@@ -1,8 +1,8 @@
-from detectors import AnalogueDetector  # type: ignore
-from layout import AbsoluteDirection as facing  # type: ignore
-from layout import Locomotive, Point  # type: ignore
-from machine import Pin  # type: ignore
-from scheduler import Scheduler  # type: ignore
+from detectors import AnalogueDetector
+from layout import AbsoluteDirection as facing
+from layout import Locomotive, Point
+from machine import Pin
+from scheduler import Scheduler
 
 LOW_FREQUENCY_PERIOD_MS = 100
 SENSORS_PERIOD_MS = 10

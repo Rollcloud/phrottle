@@ -1,8 +1,8 @@
 import json
 
-from definitions import point  # type: ignore
-from hardware import get_internal_temperature  # type: ignore
-from umqtt.simple import MQTTClient  # type: ignore
+from definitions import point
+from hardware import get_internal_temperature
+from umqtt.simple import MQTTClient
 
 MQTT_BROKER = "192.168.88.117"
 

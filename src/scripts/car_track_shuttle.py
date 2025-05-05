@@ -15,10 +15,10 @@ Commands:
 import gc
 
 import utime
-import wifi  # type: ignore
+import wifi
 from commands import (
     check_and_change_point,
-    display,  # type: ignore
+    display,
     getBlockEntrySensor,
     init_mqtt,
     move_wagon,
@@ -26,16 +26,14 @@ from commands import (
 )
 from definitions import (
     loco,
-    min_trigger_duration,  # type: ignore
+    min_trigger_duration,
     min_trigger_interval,
     point,
     sensors,
 )
-from detectors import BehaviourEvent  # type: ignore
-
-# type: ignore
-from hardware import get_iso_datetime, led, set_rtc_time  # type: ignore
-from layout import AbsoluteDirection as Facing  # type: ignore
+from detectors import BehaviourEvent
+from hardware import get_iso_datetime, led, set_rtc_time
+from layout import AbsoluteDirection as Facing
 
 MONITOR = False
 MOVEMENT_TIMEOUT = 5000 if MONITOR else 10000  # milliseconds

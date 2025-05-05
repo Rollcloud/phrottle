@@ -10,7 +10,7 @@ import json
 
 from detectors import (
     AGCConverter,
-    AnalogueDetector,  # type: ignore
+    AnalogueDetector,
     DebounceBehaviour,
     DigitalDetector,
     EventOnChangeBehaviour,
@@ -18,8 +18,8 @@ from detectors import (
     SchmittConverter,
     SimpleThresholdConverter,
 )
-from layout import AbsoluteDirection as Facing  # type: ignore
-from layout import Locomotive, Point  # type: ignore
+from layout import AbsoluteDirection as Facing
+from layout import Locomotive, Point
 
 FOUND_THRESHOLD = 20
 

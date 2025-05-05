@@ -29,7 +29,7 @@ class Detector:
     @property
     def value(self) -> int:
         """Return the detector value."""
-        return self._value  # type: ignore
+        return self._value
 
     def read(self) -> int:
         """Read and return the detector value."""

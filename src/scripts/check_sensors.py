@@ -1,7 +1,7 @@
 import utime
 from detectors import (
     AGCConverter,
-    AnalogueDetector,  # type: ignore
+    AnalogueDetector,
     DebounceBehaviour,
     DigitalDetector,
     EventOnChangeBehaviour,

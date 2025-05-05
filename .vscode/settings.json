@@ -1,0 +1,24 @@
+{
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none"
+    },
+    "micropico.syncFolder": "",
+    "micropico.openOnStart": true,
+    "python.analysis.typeshedPaths": [
+        ".venv/Lib/site-packages",
+        "~/.micropico-stubs/included",
+        "~\\.micropico-stubs\\included"
+    ],
+    "python.analysis.extraPaths": [
+        ".venv/Lib/site-packages",
+        "~/.micropico-stubs/included",
+        "~\\.micropico-stubs\\included",
+        "src/rp2*",
+        "src/rp2*/lib"
+    ],
+    "workbench.colorCustomizations": {
+        "progressBar.background": "#fff0"
+    }
+}

@@ -1,6 +1,6 @@
 import utime
 from machine import ADC
-from SimplyRobotics import PIOServo  # type: ignore
+from SimplyRobotics import PIOServo
 
 servo = PIOServo(18)
 servo.registerServo()

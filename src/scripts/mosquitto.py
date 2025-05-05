@@ -1,8 +1,8 @@
 import json
 import time
 
-import hardware  # type: ignore
-import wifi  # type: ignore
+import hardware
+import wifi
 from umqtt.simple import MQTTClient
 
 flash_led = hardware.flash_led

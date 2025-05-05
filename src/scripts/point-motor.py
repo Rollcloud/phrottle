@@ -1,5 +1,5 @@
 import utime
-from lib.SimplyRobotics import SimplePWMMotor  # type: ignore
+from lib.SimplyRobotics import SimplePWMMotor
 
 FORWARD = "f"
 REVERSE = "r"
