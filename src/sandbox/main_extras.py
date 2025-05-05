@@ -65,7 +65,9 @@ def move(request, dir):
             sub_heading=f"Direction '{dir}' is no one of {', '.join(acceptable_dirs)}",
         )
 
-    direction = RelativeDirection.FORWARD if dir == "forward" else RelativeDirection.REVERSE
+    direction = (
+        RelativeDirection.FORWARD if dir == "forward" else RelativeDirection.REVERSE
+    )
     throttle.move(direction)
     return render_template(
         "templates/jumbotron-page.html",

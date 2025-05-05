@@ -1,11 +1,10 @@
 import json
 
-import hardware  # type: ignore
 import utime
 import wifi  # type: ignore
-from detectors import (  # type: ignore
+from detectors import (
     AGCConverter,
-    AnalogueDetector,
+    AnalogueDetector,  # type: ignore
     BehaviourEvent,
     DebounceBehaviour,
     DigitalDetector,
@@ -62,7 +61,9 @@ def create_wagon_sensors(gpio_number):
 
     # Wagon counter
     wagon_counter = SchmittConverter(
-        wagon_detector, trigger_threshold=COUNT_THRESHOLD, release_threshold=CLEAR_THRESHOLD
+        wagon_detector,
+        trigger_threshold=COUNT_THRESHOLD,
+        release_threshold=CLEAR_THRESHOLD,
     )
     wagon_count_debouncer = DebounceBehaviour(wagon_counter, debounce_time_ms=min_trigger_interval)
     wagon_count_events = EventOnChangeBehaviour(wagon_count_debouncer)
@@ -165,7 +166,7 @@ qt.connect()
 
 try:
     while True:
-        payload = {"temperature": hardware.get_internal_temperature()}
+        payload = {}
 
         # monitor wagon counters
         is_moving_left = True
@@ -182,7 +183,7 @@ try:
 
         qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
 
-        # print(display(sensors, blocks), end="")
+        print(display(sensors, blocks), end="")
         utime.sleep(0.01)
 
 finally:

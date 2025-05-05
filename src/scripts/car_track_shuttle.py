@@ -16,24 +16,22 @@ import gc
 
 import utime
 import wifi  # type: ignore
-from commands import (  # type: ignore
+from commands import (
     check_and_change_point,
-    display,
+    display,  # type: ignore
     getBlockEntrySensor,
     init_mqtt,
     move_wagon,
     send_sensor_data,
 )
-from definitions import (  # type: ignore
+from definitions import (
     loco,
-    min_trigger_duration,
+    min_trigger_duration,  # type: ignore
     min_trigger_interval,
     point,
     sensors,
 )
-from detectors import (  # type: ignore
-    BehaviourEvent,
-)
+from detectors import BehaviourEvent  # type: ignore
 
 # type: ignore
 from hardware import get_iso_datetime, led, set_rtc_time  # type: ignore

@@ -58,7 +58,7 @@ class AnalogueDetector(Detector):
         """Initialise an analogue sensor detector connected to the provided pin."""
         super().__init__()
         self.gpio_number = gpio_number
-        self._sensor = ADC(gpio_number)
+        self._sensor = ADC("GP" + str(gpio_number))
 
     def read(self) -> int:
         """Read and return the ADC value in bits."""
@@ -228,7 +228,14 @@ class EventOnChangeBehaviour(Behaviour):
         return self.parent_behaviour.is_present()
 
     def check_event(self) -> int:
-        """Check for an event. Only call once per loop."""
+        """
+        Check for an event. Only call once per loop.
+
+        Returns:
+            BehaviourEvent.NONE if no event occurred.
+            BehaviourEvent.TRIGGER if an object is present.
+            BehaviourEvent.RELEASE if an object is absent.
+        """
         is_present = self.parent_behaviour.is_present()
         event = BehaviourEvent.NONE
         if is_present != self._last_present:

@@ -8,9 +8,9 @@ from definitions import loco, point, sensors
 
 import json
 
-from detectors import (  # type: ignore
+from detectors import (
     AGCConverter,
-    AnalogueDetector,
+    AnalogueDetector,  # type: ignore
     DebounceBehaviour,
     DigitalDetector,
     EventOnChangeBehaviour,

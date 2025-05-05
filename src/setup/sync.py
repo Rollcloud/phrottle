@@ -39,7 +39,10 @@ def mpremote_fs_cp(source: Path, dest: Path) -> bool:
         if source.parent != SOURCE:
             # Check if the directory exists
             result = subprocess.run(
-                f"mpremote fs ls {dest.parent}", shell=True, capture_output=True, text=True
+                f"mpremote fs ls {dest.parent}",
+                shell=True,
+                capture_output=True,
+                text=True,
             )
             if result.returncode != 0:
                 # Directory does not exist, create it

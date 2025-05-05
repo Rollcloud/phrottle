@@ -1,7 +1,7 @@
 import utime
-from detectors import (  # type: ignore
+from detectors import (
     AGCConverter,
-    AnalogueDetector,
+    AnalogueDetector,  # type: ignore
     DebounceBehaviour,
     DigitalDetector,
     EventOnChangeBehaviour,
@@ -56,7 +56,9 @@ def create_wagon_sensors(gpio_number):
 
     # Wagon counter
     wagon_counter = SchmittConverter(
-        wagon_detector, trigger_threshold=COUNT_THRESHOLD, release_threshold=CLEAR_THRESHOLD
+        wagon_detector,
+        trigger_threshold=COUNT_THRESHOLD,
+        release_threshold=CLEAR_THRESHOLD,
     )
     wagon_count_debouncer = DebounceBehaviour(wagon_counter, debounce_time_ms=min_trigger_interval)
     wagon_count_events = EventOnChangeBehaviour(wagon_count_debouncer)

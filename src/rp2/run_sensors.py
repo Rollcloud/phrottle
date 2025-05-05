@@ -23,7 +23,7 @@ button_right = Pin(12, Pin.IN, Pin.PULL_UP)
 button_left = Pin(13, Pin.IN, Pin.PULL_UP)
 
 
-def create_sensor(pin, trigger=200, release=250):
+def create_sensor(pin, trigger=200, release=650):
     return EventOnChangeBehaviour(
         SchmittConverter(
             AnalogueDetector(pin), trigger_threshold=trigger, release_threshold=release
@@ -96,13 +96,13 @@ blocks = {
 # Hardware sensors
 sensors = {
     "POINT_BASE": create_sensor(26),
-    # "POINT_THROUGH": create_sensor(27),
+    "POINT_THROUGH": create_sensor(27),
     "POINT_DIVERGE": create_sensor(28),
 }
 # Software sensor handlers for car counting and event handling
 mapping = {
     "POINT_BASE": ("0_SHED", "1_POINT"),
-    # "POINT_THROUGH": ("1_POINT", "2_THROUGH"),
+    "POINT_THROUGH": ("1_POINT", "2_THROUGH"),
     "POINT_DIVERGE": ("1_POINT", "3_DIVERGE"),
 }
 wheel_counters = {
@@ -151,7 +151,7 @@ def read_sensors():
 def send_sensor_data(sensor_data):
     payload = sensor_data
     qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
-    print(json.dumps(sensor_data), end="\r")
+    # print(json.dumps(sensor_data), end="\r")
 
 
 def main_loop():

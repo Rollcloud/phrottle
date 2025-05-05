@@ -86,7 +86,9 @@ def move(request, dir):
     if dir not in acceptable_dirs:
         return f"Direction '{dir}' is no one of {', '.join(acceptable_dirs)}", 400
 
-    direction = RelativeDirection.FORWARD if dir == "forward" else RelativeDirection.REVERSE
+    direction = (
+        RelativeDirection.FORWARD if dir == "forward" else RelativeDirection.REVERSE
+    )
     throttle.move(direction)
     return f"moving {title(dir)}"
 

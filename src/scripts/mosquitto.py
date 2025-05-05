@@ -7,7 +7,7 @@ from umqtt.simple import MQTTClient
 
 flash_led = hardware.flash_led
 
-MQTT_BROKER = "192.168.88.117"
+MQTT_BROKER = "192.168.88.108"
 
 address = wifi.connect_with_saved_credentials()
 

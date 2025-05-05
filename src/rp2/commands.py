@@ -1,8 +1,6 @@
 import json
 
-from definitions import (  # type: ignore
-    point,
-)
+from definitions import point  # type: ignore
 from hardware import get_internal_temperature  # type: ignore
 from umqtt.simple import MQTTClient  # type: ignore
 
@@ -25,7 +23,10 @@ def send_sensor_data(timestamps, sensor_data):
     try:
         qt.connect()
         for timestamp, data in zip(timestamps, sensor_data):
-            payload = {"timestamp": timestamp, "temperature": get_internal_temperature()}
+            payload = {
+                "timestamp": timestamp,
+                "temperature": get_internal_temperature(),
+            }
             payload.update(data)
             qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
         qt.disconnect()
@@ -49,7 +50,10 @@ def getBlockEntrySensor(connections, block_number: int, is_moving_left: bool) ->
             return key
 
     available_connections = ", ".join(
-        map(str, sorted({connection[connection_index] for connection in connections.values()}))
+        map(
+            str,
+            sorted({connection[connection_index] for connection in connections.values()}),
+        )
     )
     message = (
         "Block number {number} not found in connections\n"
