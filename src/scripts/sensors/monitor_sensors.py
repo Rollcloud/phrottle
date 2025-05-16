@@ -178,7 +178,7 @@ try:
                 elif event == BehaviourEvent.RELEASE:
                     move_wagon(key, False, is_moving_left)
 
-                value = sensors[key].parent_behaviour.parent_behaviour.detector.value()
+                value = sensors[key].parent_behaviour.parent_behaviour.detector.value
                 payload[key] = value
 
         qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))

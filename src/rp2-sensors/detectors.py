@@ -119,7 +119,7 @@ class SchmittConverter(Converter):
 
     def is_present(self) -> bool:
         """Return whether an object is present using a Schmitt trigger."""
-        value = self.read()
+        value = self.detector.read()
         if value < self.trigger_threshold:
             self._is_present = True
         elif value > self.release_threshold:
