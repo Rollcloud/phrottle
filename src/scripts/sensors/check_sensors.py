@@ -85,7 +85,7 @@ while True:
             sensor_present = "1" if sensor.is_present() else "0"
             print(f"{sensor_name}: {sensor_present}")
         elif sensor_name.endswith("_C"):
-            print(f"{sensor_name}: {sensor.value():>3}")
+            print(f"{sensor_name}: {sensor.value():>3} {' ' * 5}")
     print("----------------")
-    print(BACKFEED * 9, end="")
+    print(BACKFEED * 8, end="")
     utime.sleep(0.1)
