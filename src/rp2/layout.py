@@ -40,7 +40,7 @@ class Locomotive:
         Create a new locomotive instance.
 
         Args:
-            motor_number (int): Number of motor from SimplyRobotics board.
+            motor_number (int): Zero-based motor number from SimplyRobotics board.
             ID (str): Name of profile to apply to locomotive.
             Orientation (AbsoluteDirection): Direction the locomotive is facing.
         """

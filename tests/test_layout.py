@@ -1,7 +1,8 @@
 from unittest.mock import patch
 
-import layout
 import pytest
+
+from rp2 import layout
 
 mock_hardware = layout.hardware
 Locomotive = layout.Locomotive
@@ -9,7 +10,7 @@ Locomotive = layout.Locomotive
 
 @pytest.fixture
 def locomotive() -> Locomotive:
-    return layout.Locomotive()
+    return layout.Locomotive(0)
 
 
 class TestLocomotive:
