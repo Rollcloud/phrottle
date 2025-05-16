@@ -97,9 +97,9 @@ class SimpleThresholdConverter(Converter):
         Output is inverted if present_on_high is False.
         """
         if self.present_on_high:
-            return self.detector.value >= self.threshold
+            return self.detector.read() >= self.threshold
         else:
-            return self.detector.value <= self.threshold
+            return self.detector.read() <= self.threshold
 
 
 class SchmittConverter(Converter):
@@ -119,7 +119,7 @@ class SchmittConverter(Converter):
 
     def is_present(self) -> bool:
         """Return whether an object is present using a Schmitt trigger."""
-        value = self.value()
+        value = self.read()
         if value < self.trigger_threshold:
             self._is_present = True
         elif value > self.release_threshold:
@@ -134,7 +134,7 @@ class AGCConverter(Converter):
     def __init__(self, detector: Detector, base_threshold=10, gain: float = 1.0) -> None:
         """Initialise a converter with AGC."""
         self.detector = detector
-        self.base = self.detector.value
+        self.base = self.detector.read()
         self.base_threshold = base_threshold
         self.gain = gain
 
@@ -148,7 +148,7 @@ class AGCConverter(Converter):
 
         Returns True if an object is present, False otherwise.
         """
-        value = self.detector.value
+        value = self.detector.read()
         if value < self.base - self.base_threshold:
             return True
         else:
@@ -170,7 +170,7 @@ class Behaviour:
 
     def value(self) -> int:
         """Return the parent's value."""
-        return self.parent_behaviour.value
+        return self.parent_behaviour.value()
 
     def is_present(self) -> bool:
         """Return whether an object is present."""
@@ -254,7 +254,7 @@ if __name__ == "__main__":
 
     while True:
         is_present = wagon_converter.is_present()
-        value = wagon_converter.value
+        value = wagon_converter.value()
 
         led.value(is_present)
 
