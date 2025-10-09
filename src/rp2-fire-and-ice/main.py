@@ -48,6 +48,7 @@
 # - Compare to current speed and direction
 # - If different, go to MANUAL
 
+from time import sleep
 
 from hardware import TriColourLED
 from stately import STATES, StateMachine
@@ -77,6 +78,8 @@ def state_connect():
     fwd_led.colour(TriColourLED.RED)
     rev_led.colour(TriColourLED.RED)
 
+    sleep(2)
+
     return STATES.IDENTIFY
 
 
@@ -95,8 +98,12 @@ def state_indentify():
     fwd_led.colour(TriColourLED.YELLOW)
     rev_led.colour(TriColourLED.YELLOW)
 
+    sleep(2)
+
     fwd_led.colour(TriColourLED.GREEN)
     rev_led.colour(TriColourLED.GREEN)
+
+    sleep(2)
 
     return STATES.MANUAL
 
@@ -115,6 +122,8 @@ def state_manual():
     fwd_led.colour(TriColourLED.OFF)
     rev_led.colour(TriColourLED.OFF)
 
+    sleep(2)
+
     return STATES.AUTOMATIC
 
 
@@ -129,6 +138,8 @@ def state_automatic():
     """
     fwd_led.colour(TriColourLED.BLUE)
     rev_led.colour(TriColourLED.BLUE)
+
+    sleep(2)
 
     return STATES.MANUAL
 
