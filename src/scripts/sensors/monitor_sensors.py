@@ -17,8 +17,8 @@ from umqtt.simple import MQTTClient
 
 MQTT_BROKER = "192.168.88.117"
 
-COUNT_THRESHOLD = 50
-CLEAR_THRESHOLD = 60
+COUNT_THRESHOLD = 650
+CLEAR_THRESHOLD = 750
 FOUND_THRESHOLD = 20
 
 MAX_SPEED = 500  # mm/s
@@ -129,7 +129,7 @@ def display(sensors, blocks):
 
     value_strings = "\n".join(
         [
-            f"{key}: {sensor.value()}"
+            f"{key}: {sensor.value():>3}      "
             for key, sensor in sensors.items()
             if key in ["POINT_BASE_P", "POINT_THROUGH_P", "POINT_DIVERGE_P"]
         ]
@@ -161,8 +161,8 @@ sensors["POINT_DIVERGE_P"], sensors["POINT_DIVERGE_C"] = create_wagon_sensors(28
 blocks = [0, 0, 0, 0]
 
 wifi.connect_with_saved_credentials()
-qt = MQTTClient("phrottle", MQTT_BROKER, keepalive=60 * 60 * 3)
-qt.connect()
+# qt = MQTTClient("phrottle", MQTT_BROKER, keepalive=60 * 60 * 3)
+# qt.connect()
 
 try:
     while True:
@@ -181,10 +181,11 @@ try:
                 value = sensors[key].parent_behaviour.parent_behaviour.detector.value
                 payload[key] = value
 
-        qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
+        # qt.publish(b"paper_wifi/test/phrottle", json.dumps(payload))
 
         print(display(sensors, blocks), end="")
         utime.sleep(0.01)
 
 finally:
-    qt.disconnect()
+    # qt.disconnect()
+    pass
