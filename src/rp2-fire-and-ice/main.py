@@ -95,7 +95,7 @@ def state_connect():
     return STATES.IDENTIFY
 
 
-def state_indentify():
+def state_identify():
     """
     Identify the destination address.
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     state_functions = {
         STATES.INITIALISE: state_initialise,
         STATES.CONNECT: state_connect,
-        STATES.IDENTIFY: state_indentify,
+        STATES.IDENTIFY: state_identify,
         STATES.MANUAL: state_manual,
         STATES.AUTOMATIC: state_automatic,
         STATES.SHUTDOWN: state_shutdown,
