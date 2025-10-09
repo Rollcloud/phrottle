@@ -1,3 +1,7 @@
+import socket
+import time
+
+import network
 from machine import Pin
 
 
@@ -35,3 +39,100 @@ class TriColourLED:
         self.red_pin.value(1 - r)
         self.green_pin.value(1 - g)
         self.blue_pin.value(1 - b)
+
+
+class WiFi:
+    """Connection to WiFi."""
+
+    ssid = "Guard"
+    password = "ebbandflow"
+    broadcast = "255.255.255.255"
+    host = "0.0.0.0"
+    port = 50007  # arbitrary non-privileged port
+
+    def connect(self):
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(True)
+        wlan.connect(self.ssid, self.password)
+
+        # Wait for connect or fail
+        max_wait = 10
+        while max_wait > 0:
+            if wlan.status() < 0 or wlan.status() >= 3:
+                break
+            max_wait -= 1
+            time.sleep(1)
+
+        # Handle connection error
+        if wlan.status() != 3:
+            raise RuntimeError("network connection failed")
+        else:
+            # success
+            self.wlan = wlan
+            status = wlan.ifconfig()
+            self.ip_address = status[0]
+
+            return True
+
+    def open_connection(self):
+        client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # Reuse socket
+        client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        # Enable broadcasting mode
+        client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+        # Set a timeout so the socket does not block
+        # indefinitely when trying to receive data.
+        client.settimeout(0.1)
+
+        # Bind socket to port
+        addr = socket.getaddrinfo(self.host, self.port, socket.AF_INET, socket.SOCK_DGRAM)[0][-1]
+        client.bind(addr)
+
+        self.client = client
+
+    def close_connection(self):
+        self.client.close()
+
+    def send(self, message, ip_address=None):
+        if ip_address is None:
+            ip_address = self.server_ip_address
+
+        address = socket.getaddrinfo(
+            ip_address,
+            self.port,
+            socket.AF_INET,
+            socket.SOCK_DGRAM,
+        )[0][-1]
+        self.client.sendto(message.encode(), address)
+
+    def send_marco(self):
+        self.send("MARCO", ip_address=self.broadcast)
+        time.sleep(0.3)
+
+    def receive(self, include_ip_address=False):
+        try:
+            data, (ip_address, _port) = self.client.recvfrom(1024)
+        except OSError:  # OSError: [Errno 110] ETIMEDOUT
+            # To be expected if no message has been received
+            return None
+
+        if include_ip_address:
+            return data, ip_address
+
+        return data
+
+    def receive_polo(self):
+        data = self.receive(include_ip_address=True)
+
+        if data is None:
+            return
+
+        message, ip_address = data
+
+        if "POLO" in message:
+            self.server_ip_address = ip_address
+
+            return True

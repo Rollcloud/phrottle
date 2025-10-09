@@ -56,7 +56,7 @@
 
 from time import sleep
 
-from hardware import Switch, TriColourLED
+from hardware import Switch, TriColourLED, WiFi
 from stately import STATES, StateMachine
 
 fwd_led = None
@@ -65,16 +65,20 @@ rev_led = None
 fwd_switch = None
 rev_switch = None
 
+wifi = None
+
 
 def state_initialise():
     """Initialise hardware when power is first applied."""
-    global fwd_led, rev_led, fwd_switch, rev_switch
+    global fwd_led, rev_led, fwd_switch, rev_switch, wifi
 
     fwd_led = TriColourLED(4, 2, 3)
     rev_led = TriColourLED(6, 7, 8)
 
     fwd_switch = Switch(14)
     rev_switch = Switch(15)
+
+    wifi = WiFi()
 
     return STATES.CONNECT
 
@@ -90,7 +94,14 @@ def state_connect():
     fwd_led.colour(TriColourLED.RED)
     rev_led.colour(TriColourLED.RED)
 
-    sleep(2)
+    while True:
+        try:
+            if wifi.connect():
+                break
+        except Exception:
+            pass  # Wait and try again
+
+        sleep(10)
 
     return STATES.IDENTIFY
 
@@ -110,7 +121,10 @@ def state_identify():
     fwd_led.colour(TriColourLED.YELLOW)
     rev_led.colour(TriColourLED.YELLOW)
 
-    sleep(2)
+    wifi.open_connection()
+
+    while not wifi.receive_polo():
+        wifi.send_marco()
 
     fwd_led.colour(TriColourLED.GREEN)
     rev_led.colour(TriColourLED.GREEN)
@@ -167,6 +181,8 @@ def state_shutdown():
     """Turn off hardware."""
     fwd_led.colour(TriColourLED.OFF)
     rev_led.colour(TriColourLED.OFF)
+
+    wifi.close_connection()
 
 
 if __name__ == "__main__":
