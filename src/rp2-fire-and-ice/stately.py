@@ -4,11 +4,12 @@
 class STATES:
     """State machine state constants."""
 
-    POWER = 0
+    INITIALISE = 0
     CONNECT = 1
     IDENTIFY = 2
     MANUAL = 3
     AUTOMATIC = 4
+    SHUTDOWN = 5
 
 
 class StateMachine:
@@ -20,9 +21,10 @@ class StateMachine:
     The functions should return a STATES enum to set the next state to enter.
     """
 
-    def __init__(self, state_functions) -> None:
+    def __init__(self, state_functions, interrupt_state=None) -> None:
         self.state = 0  # first state in the states enum
         self.state_functions = state_functions
+        self.interrupt_state = interrupt_state
 
     def run_loop(self):
         """Execute the state machine functions in a loop."""
@@ -32,4 +34,7 @@ class StateMachine:
                 next_state = self.state_functions[self.state]()
                 self.state = next_state or self.state
         except KeyboardInterrupt:
-            pass  # Keyboard interrupt is an expected way to interrupt the state machine
+            # Keyboard interrupt is an expected way to stop the state machine
+            if self.interrupt_state:
+                next_state = self.state_functions[self.interrupt_state]()
+                self.state = next_state or self.state

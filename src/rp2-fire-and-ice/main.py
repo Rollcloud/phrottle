@@ -7,11 +7,12 @@
 #
 # Transitions:
 #
-# POWER -> CONNECT -> IDENTIFY -> MANUAL -> AUTOMATIC -> MANUAL
+# INITIALISE -> CONNECT -> IDENTIFY -> MANUAL -> AUTOMATIC -> MANUAL
+#   --> SHUTDOWN
 #
-# -------------------------------------------------------------
+# ------------------------------------------------------------------
 #
-# POWER
+# INITIALISE
 #
 # - Initialise hardware
 #
@@ -47,6 +48,11 @@
 # - Read speed and direction inputs
 # - Compare to current speed and direction
 # - If different, go to MANUAL
+#
+# SHUTDOWN
+#
+# Should shutdown state be triggered
+# - Both LEDs off
 
 from time import sleep
 
@@ -60,7 +66,7 @@ fwd_switch = None
 rev_switch = None
 
 
-def state_power():
+def state_initialise():
     """Initialise hardware when power is first applied."""
     global fwd_led, rev_led, fwd_switch, rev_switch
 
@@ -157,13 +163,20 @@ def state_automatic():
     return STATES.MANUAL
 
 
+def state_shutdown():
+    """Turn off hardware."""
+    fwd_led.colour(TriColourLED.OFF)
+    rev_led.colour(TriColourLED.OFF)
+
+
 if __name__ == "__main__":
     state_functions = {
-        STATES.POWER: state_power,
+        STATES.INITIALISE: state_initialise,
         STATES.CONNECT: state_connect,
         STATES.IDENTIFY: state_indentify,
         STATES.MANUAL: state_manual,
         STATES.AUTOMATIC: state_automatic,
+        STATES.SHUTDOWN: state_shutdown,
     }
-    state_machine = StateMachine(state_functions)
+    state_machine = StateMachine(state_functions, interrupt_state=STATES.SHUTDOWN)
     state_machine.run_loop()
