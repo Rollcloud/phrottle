@@ -1,6 +1,16 @@
 from machine import Pin
 
 
+class Switch:
+    """An ON-OFF input switch with an internal pull-up resistor."""
+
+    def __init__(self, gpio) -> None:
+        self.pin = Pin(gpio, Pin.IN, Pin.PULL_UP)
+
+    def is_high(self):
+        return 1 - self.pin.value()  # invert the value for pull-up resistor
+
+
 class TriColourLED:
     """A RGB LED."""
 

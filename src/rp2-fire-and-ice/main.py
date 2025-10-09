@@ -50,19 +50,25 @@
 
 from time import sleep
 
-from hardware import TriColourLED
+from hardware import Switch, TriColourLED
 from stately import STATES, StateMachine
 
 fwd_led = None
 rev_led = None
 
+fwd_switch = None
+rev_switch = None
+
 
 def state_power():
     """Initialise hardware when power is first applied."""
-    global fwd_led, rev_led
+    global fwd_led, rev_led, fwd_switch, rev_switch
 
     fwd_led = TriColourLED(4, 2, 3)
     rev_led = TriColourLED(6, 7, 8)
+
+    fwd_switch = Switch(14)
+    rev_switch = Switch(15)
 
     return STATES.CONNECT
 
@@ -115,12 +121,19 @@ def state_manual():
     - Check for feedback from destination
     - If any received, go to AUTOMATIC
     - Read speed and direction inputs
-    - Set DIR LED to solid blue
+    - Set DIR LED to solid orange
     - Compare to current speed and direction
     - If different, send CONTROL update over UDP
     """
-    fwd_led.colour(TriColourLED.OFF)
-    rev_led.colour(TriColourLED.OFF)
+    if fwd_switch.is_high() or rev_switch.is_high():
+        fwd_led.colour(TriColourLED.OFF)
+        rev_led.colour(TriColourLED.OFF)
+
+    if fwd_switch.is_high():
+        fwd_led.colour(TriColourLED.YELLOW)
+
+    if rev_switch.is_high():
+        rev_led.colour(TriColourLED.YELLOW)
 
     sleep(2)
 
