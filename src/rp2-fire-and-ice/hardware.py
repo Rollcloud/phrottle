@@ -2,7 +2,7 @@ import socket
 import time
 
 import network
-from machine import Pin
+from machine import ADC, Pin
 
 
 class Switch:
@@ -11,8 +11,21 @@ class Switch:
     def __init__(self, gpio) -> None:
         self.pin = Pin(gpio, Pin.IN, Pin.PULL_UP)
 
-    def is_high(self):
+    def is_high(self) -> int:
         return 1 - self.pin.value()  # invert the value for pull-up resistor
+
+
+class Slider:
+    """An analogue percentage detector."""
+
+    def __init__(self, gpio) -> None:
+        self.adc = ADC(Pin(gpio, Pin.IN))
+
+    def value(self):
+        """Return the value as an integer between 0 and 128."""
+        value = self.adc.read_u16() >> 9
+
+        return max(0, min(value - 14, 100))  # centralise and limit returned result
 
 
 class TriColourLED:

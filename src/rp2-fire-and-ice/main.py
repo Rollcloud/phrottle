@@ -56,7 +56,7 @@
 
 from time import sleep
 
-from hardware import Switch, TriColourLED, WiFi
+from hardware import Slider, Switch, TriColourLED, WiFi
 from stately import STATES, StateMachine
 
 fwd_led = None
@@ -65,18 +65,51 @@ rev_led = None
 fwd_switch = None
 rev_switch = None
 
+speed_knob = None
+
 wifi = None
+
+last_speed = None
+last_direction = None
+
+
+class Direction:
+    """A numeric representation of the direction."""
+
+    REVERSE = -1
+    NONE = 0
+    FORWARD = 1
+
+    @staticmethod
+    def letter(direction):
+        letters = {
+            -1: "R",
+            0: "N",
+            1: "F",
+        }
+        return letters[direction]
+
+
+def read_direction() -> Direction:
+    """Read the direction switches and return the resulting Direction."""
+    value = fwd_switch.is_high() - rev_switch.is_high()
+
+    # TODO: convert to Direction constant
+
+    return value
 
 
 def state_initialise():
     """Initialise hardware when power is first applied."""
-    global fwd_led, rev_led, fwd_switch, rev_switch, wifi
+    global fwd_led, rev_led, fwd_switch, rev_switch, wifi, speed_knob
 
     fwd_led = TriColourLED(4, 2, 3)
     rev_led = TriColourLED(6, 7, 8)
 
     fwd_switch = Switch(14)
     rev_switch = Switch(15)
+
+    speed_knob = Slider(28)
 
     wifi = WiFi()
 
@@ -118,6 +151,8 @@ def state_identify():
     - Both LEDs solid orange
     - Read speed and direction inputs and save as current
     """
+    global last_speed, last_direction
+
     fwd_led.colour(TriColourLED.YELLOW)
     rev_led.colour(TriColourLED.YELLOW)
 
@@ -129,7 +164,10 @@ def state_identify():
     fwd_led.colour(TriColourLED.GREEN)
     rev_led.colour(TriColourLED.GREEN)
 
-    sleep(2)
+    last_speed = speed_knob.value()
+    last_direction = read_direction()
+
+    sleep(1)
 
     return STATES.MANUAL
 
@@ -145,19 +183,33 @@ def state_manual():
     - Compare to current speed and direction
     - If different, send CONTROL update over UDP
     """
-    if fwd_switch.is_high() or rev_switch.is_high():
+    global last_speed, last_direction
+
+    new_speed = speed_knob.value()
+    new_direction = read_direction()
+
+    if fwd_switch.is_high() + rev_switch.is_high() == 2:
+        return STATES.AUTOMATIC
+
+    if new_direction == Direction.FORWARD:
+        fwd_led.colour(TriColourLED.YELLOW)
+        rev_led.colour(TriColourLED.OFF)
+    elif new_direction == Direction.REVERSE:
+        fwd_led.colour(TriColourLED.OFF)
+        rev_led.colour(TriColourLED.YELLOW)
+    else:
         fwd_led.colour(TriColourLED.OFF)
         rev_led.colour(TriColourLED.OFF)
 
-    if fwd_switch.is_high():
-        fwd_led.colour(TriColourLED.YELLOW)
+    if new_direction != last_direction or new_speed != last_speed:
+        message = f"CONTROL {Direction.letter(new_direction)} {new_speed}"
+        wifi.send(message)
 
-    if rev_switch.is_high():
-        rev_led.colour(TriColourLED.YELLOW)
+    last_direction = new_direction
+    last_speed = new_speed
+    sleep(0.02)
 
-    sleep(2)
-
-    return STATES.AUTOMATIC
+    return STATES.MANUAL
 
 
 def state_automatic():
@@ -169,12 +221,20 @@ def state_automatic():
     - Compare to current speed and direction
     - If different, go to MANUAL
     """
+    global last_speed, last_direction
+
     fwd_led.colour(TriColourLED.BLUE)
     rev_led.colour(TriColourLED.BLUE)
 
-    sleep(2)
+    new_speed = speed_knob.value()
+    new_direction = read_direction()
 
-    return STATES.MANUAL
+    if new_direction != Direction.NONE or abs(new_speed - last_speed) >= 2:
+        return STATES.MANUAL
+
+    sleep(0.02)
+
+    return STATES.AUTOMATIC
 
 
 def state_shutdown():

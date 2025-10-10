@@ -30,7 +30,6 @@ class StateMachine:
         """Execute the state machine functions in a loop."""
         try:
             while True:
-                print(self.state)  # TODO: remove debug print statement
                 next_state = self.state_functions[self.state]()
                 self.state = next_state or self.state
         except KeyboardInterrupt:
