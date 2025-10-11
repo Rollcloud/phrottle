@@ -66,6 +66,8 @@ def state_stop():
     """Stop state."""
     speed_led.off()
 
+    wifi.send("STOPPED", wifi.broadcast)
+
     while True:
         data = wifi.receive(include_ip_address=True)
 
@@ -105,12 +107,15 @@ def state_forward():
     speed_led.activate()
     speed_led.brightness(speed_led.value + ACCELERATION)
 
+    wifi.send("FORWARD", wifi.broadcast)
+
     message = wifi.receive()
     if message is None:
         pass  # skip further parsing
     elif b"STOP" in message:
         return STATES.STOP
     elif b"TRIGGER" in message:
+        wifi.send("FORWARD_END", wifi.broadcast)
         return STATES.SLOW
 
 
@@ -123,12 +128,15 @@ def state_reverse():
     speed_led.activate()
     speed_led.brightness(speed_led.value + ACCELERATION)
 
+    wifi.send("REVERSE", wifi.broadcast)
+
     message = wifi.receive()
     if message is None:
         pass  # skip further parsing
     elif b"STOP" in message:
         return STATES.STOP
     elif b"TRIGGER" in message:
+        wifi.send("REVERSE_END", wifi.broadcast)
         return STATES.SLOW
 
 

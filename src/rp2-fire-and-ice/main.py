@@ -224,8 +224,23 @@ def state_automatic():
     """
     global last_speed, last_direction
 
-    fwd_led.colour(TriColourLED.BLUE)
-    rev_led.colour(TriColourLED.BLUE)
+    message = wifi.receive()
+    if message is None:
+        pass  # skip further parsing
+    elif b"FORWARD_END" in message:
+        fwd_led.colour(TriColourLED.YELLOW)
+        rev_led.colour(TriColourLED.BLUE)
+    elif b"REVERSE_END" in message:
+        fwd_led.colour(TriColourLED.BLUE)
+        rev_led.colour(TriColourLED.YELLOW)
+    elif b"STOPPED" in message:
+        fwd_led.colour(TriColourLED.YELLOW)
+        rev_led.colour(TriColourLED.YELLOW)
+
+        return STATES.MANUAL
+    else:
+        fwd_led.colour(TriColourLED.BLUE)
+        rev_led.colour(TriColourLED.BLUE)
 
     new_speed = speed_knob.value()
     new_direction = read_direction()
@@ -234,9 +249,8 @@ def state_automatic():
         wifi.send("TRIGGER")
 
     if abs(new_speed - last_speed) >= 2:
+        wifi.send("STOP")
         return STATES.MANUAL
-
-    sleep(0.02)
 
     return STATES.AUTOMATIC
 
