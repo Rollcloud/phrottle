@@ -152,7 +152,10 @@ class WiFi:
         self.client = client
 
     def close_connection(self):
-        self.client.close()
+        try:
+            self.client.close()
+        except Exception:
+            pass  # ignore all exceptions, we just want to close
 
     def send(self, message, ip_address=None):
         if ip_address is None:

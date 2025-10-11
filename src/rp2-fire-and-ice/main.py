@@ -189,6 +189,7 @@ def state_manual():
     new_direction = read_direction()
 
     if fwd_switch.is_high() + rev_switch.is_high() == 2:
+        wifi.send("AUTO")
         return STATES.AUTOMATIC
 
     if new_direction == Direction.FORWARD:
@@ -229,7 +230,10 @@ def state_automatic():
     new_speed = speed_knob.value()
     new_direction = read_direction()
 
-    if new_direction != Direction.NONE or abs(new_speed - last_speed) >= 2:
+    if new_direction != Direction.NONE:
+        wifi.send("TRIGGER")
+
+    if abs(new_speed - last_speed) >= 2:
         return STATES.MANUAL
 
     sleep(0.02)

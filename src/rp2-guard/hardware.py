@@ -44,11 +44,16 @@ class PWM_LED:
         self.pwm.freq(1000)
 
         self.active = True
+        self.value = 0
 
     def brightness(self, value: int):
         """Set the brightness of the LED, if it is active, by providing a number between 0 and 100."""
         if self.active:
-            self.pwm.duty_u16(int(value / 100 * 65535))
+            self.value = max(0, min(value, 100))
+            self.pwm.duty_u16(int(self.value / 100 * 65535))
+
+    def activate(self):
+        self.active = True
 
     def off(self):
         """Deactivate the LED."""
@@ -152,7 +157,10 @@ class WiFi:
         self.client = client
 
     def close_connection(self):
-        self.client.close()
+        try:
+            self.client.close()
+        except Exception:
+            pass  # ignore all exceptions, we just want to close
 
     def send(self, message, ip_address=None):
         if ip_address is None:
