@@ -104,7 +104,7 @@ def state_initialise():
     global fwd_led, rev_led, fwd_switch, rev_switch, wifi, speed_knob
 
     fwd_led = TriColourLED(4, 2, 3)
-    rev_led = TriColourLED(6, 7, 8)
+    rev_led = TriColourLED(13, 12, 11)
 
     fwd_switch = Switch(14)
     rev_switch = Switch(15)
