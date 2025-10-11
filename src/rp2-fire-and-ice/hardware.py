@@ -85,11 +85,18 @@ class TriColourLED:
         self.colour(self.OFF)
 
     def colour(self, new_colour):
+        self.current_colour = new_colour
         r, g, b = new_colour
         # invert the values for common anode
         self.red_pin.value(1 - r)
         self.green_pin.value(1 - g)
         self.blue_pin.value(1 - b)
+
+    def toggle(self, colour_1, colour_2):
+        if self.current_colour == colour_1:
+            self.colour(colour_2)
+        else:
+            self.colour(colour_1)
 
 
 class WiFi:

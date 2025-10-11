@@ -8,9 +8,10 @@ class STATES:
     CONNECT = 1
     IDENTIFY = 2
     STOPPED = 3
-    MANUAL = 4
-    AUTOMATIC = 5
-    SHUTDOWN = 6
+    TRANSITION = 4
+    MANUAL = 5
+    AUTOMATIC = 6
+    SHUTDOWN = 7
 
 
 class StateMachine:

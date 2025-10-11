@@ -124,19 +124,17 @@ def state_connect():
     - Connect to pre-configured WIFI network
     - Retry after 10 seconds, ad infinitum
     """
-    fwd_led.colour(TriColourLED.RED)
-    rev_led.colour(TriColourLED.RED)
+    fwd_led.colour(TriColourLED.OFF)
+    rev_led.colour(TriColourLED.YELLOW)
 
-    while True:
-        try:
-            if wifi.connect():
-                break
-        except Exception:
-            pass  # Wait and try again
+    try:
+        if wifi.connect():
+            return STATES.IDENTIFY
+    except Exception as e:
+        print(e)
+        pass  # Wait and try again
 
-        sleep(10)
-
-    return STATES.IDENTIFY
+    sleep(10)
 
 
 def state_identify():
@@ -153,21 +151,19 @@ def state_identify():
     """
     global last_speed, last_direction
 
-    fwd_led.colour(TriColourLED.YELLOW)
-    fwd_led.colour(TriColourLED.RED)
-
     wifi.open_connection()
 
     while not wifi.receive_polo():
-        wifi.send_marco()
+        fwd_led.toggle(TriColourLED.YELLOW, TriColourLED.BLUE)
+        rev_led.toggle(TriColourLED.BLUE, TriColourLED.YELLOW)
 
-    fwd_led.colour(TriColourLED.YELLOW)
-    rev_led.colour(TriColourLED.YELLOW)
+        if wifi.wlan.status() != 3:
+            return STATES.CONNECT
+
+        wifi.send_marco()
 
     last_speed = speed_knob.value()
     last_direction = read_direction()
-
-    sleep(1)
 
     return STATES.STOPPED
 
@@ -178,6 +174,20 @@ def state_stopped():
     rev_led.colour(TriColourLED.YELLOW)
 
     new_speed = speed_knob.value()
+    if new_speed >= 33 and new_speed <= 66:
+        return STATES.TRANSITION
+
+
+def state_transition():
+    """Transition to manual or automatic."""
+    global last_speed, last_direction
+
+    fwd_led.colour(TriColourLED.PURPLE)
+    rev_led.colour(TriColourLED.PURPLE)
+
+    new_speed = speed_knob.value()
+    last_speed = new_speed
+
     if new_speed == 0:
         return STATES.MANUAL
     elif new_speed == 100:
@@ -217,16 +227,13 @@ def state_manual():
         rev_led.colour(TriColourLED.OFF)
 
     if fwd_switch.is_high() + rev_switch.is_high() == 2:
-        wifi.send("STOPPED")
+        wifi.send("STOP")
+        return STATES.STOPPED
     elif new_direction != last_direction or new_speed != last_speed:
         message = f"CONTROL {Direction.letter(new_direction)} {new_speed}"
         wifi.send(message)
 
-    message = wifi.receive()
-    if message is None:
-        pass  # skip further parsing
-    elif b"STOPPED" in message:
-        return STATES.STOPPED
+    sleep(0.02)
 
     last_direction = new_direction
     last_speed = new_speed
@@ -284,6 +291,7 @@ if __name__ == "__main__":
         STATES.CONNECT: state_connect,
         STATES.IDENTIFY: state_identify,
         STATES.STOPPED: state_stopped,
+        STATES.TRANSITION: state_transition,
         STATES.MANUAL: state_manual,
         STATES.AUTOMATIC: state_automatic,
         STATES.SHUTDOWN: state_shutdown,
