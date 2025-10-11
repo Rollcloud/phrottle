@@ -4,6 +4,8 @@ import utime
 from hardware import LED, PWM_LED, WiFi
 from stately import STATES, StateMachine
 
+ACCELERATION = 3
+
 wifi = None
 wifi_led = None
 speed_led = None
@@ -101,7 +103,7 @@ def state_forward():
     current_direction = Direction.FORWARD
 
     speed_led.activate()
-    speed_led.brightness(speed_led.value + 2)
+    speed_led.brightness(speed_led.value + ACCELERATION)
 
     message = wifi.receive()
     if message is None:
@@ -119,7 +121,7 @@ def state_reverse():
     current_direction = Direction.REVERSE
 
     speed_led.activate()
-    speed_led.brightness(speed_led.value + 2)
+    speed_led.brightness(speed_led.value + ACCELERATION)
 
     message = wifi.receive()
     if message is None:
@@ -132,7 +134,7 @@ def state_reverse():
 
 def state_slow():
     """Slow to a stop."""
-    speed_led.brightness(speed_led.value - 2)
+    speed_led.brightness(speed_led.value - ACCELERATION)
 
     if speed_led.value == 0:
         return STATES.BOUNCE
