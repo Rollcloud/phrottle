@@ -7,9 +7,10 @@ class STATES:
     INITIALISE = 0
     CONNECT = 1
     IDENTIFY = 2
-    MANUAL = 3
-    AUTOMATIC = 4
-    SHUTDOWN = 5
+    STOPPED = 3
+    MANUAL = 4
+    AUTOMATIC = 5
+    SHUTDOWN = 6
 
 
 class StateMachine:
@@ -30,6 +31,7 @@ class StateMachine:
         """Execute the state machine functions in a loop."""
         try:
             while True:
+                print(f"state={self.state}")  # TODO: remove debug print statement
                 next_state = self.state_functions[self.state]()
                 self.state = next_state or self.state
         except KeyboardInterrupt:

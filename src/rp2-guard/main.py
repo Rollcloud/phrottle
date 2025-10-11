@@ -53,9 +53,9 @@ def state_connect():
     """Connect state."""
     try:
         wifi.share_access_point()
-        wifi_led.pin.off()
+        utime.sleep(0.5)
         wifi.open_connection()
-        wifi_led.pin.on()
+        utime.sleep(0.5)
 
         return STATES.STOP
     except Exception:
@@ -64,38 +64,38 @@ def state_connect():
 
 def state_stop():
     """Stop state."""
+    wifi_led.pin.toggle()
     speed_led.off()
 
     wifi.send("STOPPED", wifi.broadcast)
 
-    while True:
-        data = wifi.receive(include_ip_address=True)
+    data = wifi.receive(include_ip_address=True)
+    if data is None:
+        return  # skip further parsing
 
-        if not data:
-            continue
-
-        message, ip_address = data
-
-        if b"CONTROL" in message:
-            wifi.send("ECHO " + message.decode(), wifi.broadcast)
-            _control, direction, speed = message.split()
-
-            if direction == b"R":
-                speed_led.on()
-            elif direction == b"F":
-                speed_led.off()
-
-            speed_led.brightness(int(speed))
-
-        elif b"AUTO" in message:
-            return STATES.BOUNCE
-
-        elif b"MARCO" in message:
-            wifi.send("POLO", ip_address)
+    message, ip_address = data
+    if b"MARCO" in message:
+        wifi.send("POLO", ip_address)
+    elif b"CONTROL" in message:
+        return STATES.MANUAL
+    elif b"AUTO" in message:
+        return STATES.BOUNCE
 
 
 def state_manual():
     """Manual state."""
+    wifi_led.pin.on()
+
+    message = wifi.receive()
+    if message is None:
+        pass  # skip further parsing
+    elif b"CONTROL" in message:
+        _control, direction, speed = message.split()
+
+        speed_led.on()
+        speed_led.brightness(int(speed))
+    elif b"STOP" in message:
+        return STATES.STOP
 
 
 def state_forward():
@@ -157,6 +157,10 @@ def state_slow():
 def state_bounce():
     """Wait, then change direction."""
     global future_ticks, current_direction
+
+    wifi_led.pin.off()
+
+    wifi.send("BOUNCE", wifi.broadcast)
 
     message = wifi.receive()
     if message is None:

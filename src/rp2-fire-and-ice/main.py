@@ -154,22 +154,40 @@ def state_identify():
     global last_speed, last_direction
 
     fwd_led.colour(TriColourLED.YELLOW)
-    rev_led.colour(TriColourLED.YELLOW)
+    fwd_led.colour(TriColourLED.RED)
 
     wifi.open_connection()
 
     while not wifi.receive_polo():
         wifi.send_marco()
 
-    fwd_led.colour(TriColourLED.GREEN)
-    rev_led.colour(TriColourLED.GREEN)
+    fwd_led.colour(TriColourLED.YELLOW)
+    rev_led.colour(TriColourLED.YELLOW)
 
     last_speed = speed_knob.value()
     last_direction = read_direction()
 
     sleep(1)
 
-    return STATES.MANUAL
+    return STATES.STOPPED
+
+
+def state_stopped():
+    """Reset now that automatic control has ended."""
+    fwd_led.colour(TriColourLED.YELLOW)
+    rev_led.colour(TriColourLED.YELLOW)
+
+    new_speed = speed_knob.value()
+    if new_speed == 0:
+        return STATES.MANUAL
+    elif new_speed == 100:
+        wifi.send("AUTO")
+
+    message = wifi.receive()
+    if message is None:
+        pass  # skip further parsing
+    elif b"BOUNCE" in message:
+        return STATES.AUTOMATIC
 
 
 def state_manual():
@@ -188,10 +206,6 @@ def state_manual():
     new_speed = speed_knob.value()
     new_direction = read_direction()
 
-    if fwd_switch.is_high() + rev_switch.is_high() == 2:
-        wifi.send("AUTO")
-        return STATES.AUTOMATIC
-
     if new_direction == Direction.FORWARD:
         fwd_led.colour(TriColourLED.YELLOW)
         rev_led.colour(TriColourLED.OFF)
@@ -202,13 +216,20 @@ def state_manual():
         fwd_led.colour(TriColourLED.OFF)
         rev_led.colour(TriColourLED.OFF)
 
-    if new_direction != last_direction or new_speed != last_speed:
+    if fwd_switch.is_high() + rev_switch.is_high() == 2:
+        wifi.send("STOPPED")
+    elif new_direction != last_direction or new_speed != last_speed:
         message = f"CONTROL {Direction.letter(new_direction)} {new_speed}"
         wifi.send(message)
 
+    message = wifi.receive()
+    if message is None:
+        pass  # skip further parsing
+    elif b"STOPPED" in message:
+        return STATES.STOPPED
+
     last_direction = new_direction
     last_speed = new_speed
-    sleep(0.02)
 
     return STATES.MANUAL
 
@@ -234,10 +255,7 @@ def state_automatic():
         fwd_led.colour(TriColourLED.BLUE)
         rev_led.colour(TriColourLED.YELLOW)
     elif b"STOPPED" in message:
-        fwd_led.colour(TriColourLED.YELLOW)
-        rev_led.colour(TriColourLED.YELLOW)
-
-        return STATES.MANUAL
+        return STATES.STOPPED
     else:
         fwd_led.colour(TriColourLED.BLUE)
         rev_led.colour(TriColourLED.BLUE)
@@ -250,9 +268,6 @@ def state_automatic():
 
     if abs(new_speed - last_speed) >= 2:
         wifi.send("STOP")
-        return STATES.MANUAL
-
-    return STATES.AUTOMATIC
 
 
 def state_shutdown():
@@ -268,6 +283,7 @@ if __name__ == "__main__":
         STATES.INITIALISE: state_initialise,
         STATES.CONNECT: state_connect,
         STATES.IDENTIFY: state_identify,
+        STATES.STOPPED: state_stopped,
         STATES.MANUAL: state_manual,
         STATES.AUTOMATIC: state_automatic,
         STATES.SHUTDOWN: state_shutdown,
