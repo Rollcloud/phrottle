@@ -85,11 +85,18 @@ class TriColourLED:
         self.colour(self.OFF)
 
     def colour(self, new_colour):
+        self.current_colour = new_colour
         r, g, b = new_colour
         # invert the values for common anode
         self.red_pin.value(1 - r)
         self.green_pin.value(1 - g)
         self.blue_pin.value(1 - b)
+
+    def toggle(self, colour_1, colour_2):
+        if self.current_colour == colour_1:
+            self.colour(colour_2)
+        else:
+            self.colour(colour_1)
 
 
 class WiFi:
@@ -113,7 +120,7 @@ class WiFi:
         status = wlan.ifconfig()
         self.ip_address = status[0]
 
-    def connect(self):
+    def connect_to_wifi(self):
         wlan = network.WLAN(network.STA_IF)
         wlan.active(True)
         wlan.connect(self.ssid, self.password)
@@ -137,7 +144,14 @@ class WiFi:
 
             return True
 
-    def open_connection(self):
+    def disconnect_wifi(self):
+        """Completely deactivate the WiFi interface."""
+        self.wlan.disconnect()
+        self.wlan.active(False)
+        self.wlan.deinit()
+        self.ip_address = None
+
+    def open_udp_socket(self):
         client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # Reuse socket
@@ -156,7 +170,7 @@ class WiFi:
 
         self.client = client
 
-    def close_connection(self):
+    def close_udp_socket(self):
         try:
             self.client.close()
         except Exception:

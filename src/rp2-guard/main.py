@@ -54,7 +54,7 @@ def state_connect():
     try:
         wifi.share_access_point()
         utime.sleep(0.5)
-        wifi.open_connection()
+        wifi.open_udp_socket()
         utime.sleep(0.5)
 
         return STATES.STOP
@@ -197,7 +197,8 @@ def state_shutdown():
     wifi_led.pin.off()
     speed_led.off()
 
-    wifi.close_connection()
+    wifi.close_udp_socket()
+    wifi.disconnect_wifi()
 
 
 if __name__ == "__main__":

@@ -120,7 +120,7 @@ class WiFi:
         status = wlan.ifconfig()
         self.ip_address = status[0]
 
-    def connect(self):
+    def connect_to_wifi(self):
         wlan = network.WLAN(network.STA_IF)
         wlan.active(True)
         wlan.connect(self.ssid, self.password)
@@ -144,7 +144,14 @@ class WiFi:
 
             return True
 
-    def open_connection(self):
+    def disconnect_wifi(self):
+        """Completely deactivate the WiFi interface."""
+        self.wlan.disconnect()
+        self.wlan.active(False)
+        self.wlan.deinit()
+        self.ip_address = None
+
+    def open_udp_socket(self):
         client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # Reuse socket
@@ -163,7 +170,7 @@ class WiFi:
 
         self.client = client
 
-    def close_connection(self):
+    def close_udp_socket(self):
         try:
             self.client.close()
         except Exception:

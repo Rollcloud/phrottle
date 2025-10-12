@@ -128,7 +128,7 @@ def state_connect():
     rev_led.colour(TriColourLED.YELLOW)
 
     try:
-        if wifi.connect():
+        if wifi.connect_to_wifi():
             return STATES.IDENTIFY
     except Exception as e:
         print(e)
@@ -151,7 +151,7 @@ def state_identify():
     """
     global last_speed, last_direction
 
-    wifi.open_connection()
+    wifi.open_udp_socket()
 
     while not wifi.receive_polo():
         fwd_led.toggle(TriColourLED.YELLOW, TriColourLED.BLUE)
@@ -282,7 +282,8 @@ def state_shutdown():
     fwd_led.colour(TriColourLED.OFF)
     rev_led.colour(TriColourLED.OFF)
 
-    wifi.close_connection()
+    wifi.close_udp_socket()
+    wifi.disconnect_wifi()
 
 
 if __name__ == "__main__":
