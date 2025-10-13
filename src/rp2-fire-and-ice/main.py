@@ -56,7 +56,7 @@
 
 from time import sleep
 
-from hardware import Slider, Switch, TriColourLED, WiFi
+from hardware import Indicator, Slider, Switch, WiFi
 from stately import STATES, StateMachine
 
 fwd_indicator = None
@@ -99,12 +99,22 @@ def read_direction() -> Direction:
     return value
 
 
+def before_state():
+    """For execution after the state function."""
+    try:
+        fwd_indicator.show_guise(fwd_indicator.guise, effect="flicker")
+        rev_indicator.show_guise(fwd_indicator.guise, effect="flicker")
+    except AttributeError:
+        # indicators have not been initialised yet
+        pass
+
+
 def state_initialise():
     """Initialise hardware when power is first applied."""
     global fwd_indicator, rev_indicator, fwd_switch, rev_switch, wifi, speed_knob
 
-    fwd_indicator = TriColourLED(4, 2, 3)
-    rev_indicator = TriColourLED(13, 12, 11)
+    fwd_indicator = Indicator(4, 2, 3)
+    rev_indicator = Indicator(13, 12, 11)
 
     fwd_switch = Switch(14)
     rev_switch = Switch(15)
@@ -124,8 +134,8 @@ def state_connect():
     - Connect to pre-configured WIFI network
     - Retry after 10 seconds, ad infinitum
     """
-    fwd_indicator.colour(TriColourLED.OFF)
-    rev_indicator.colour(TriColourLED.YELLOW)
+    fwd_indicator.show_guise(Indicator.OFF)
+    rev_indicator.show_guise(Indicator.ORANGE)
 
     try:
         if wifi.connect_to_wifi():
@@ -153,9 +163,12 @@ def state_identify():
 
     wifi.open_udp_socket()
 
+    # Put Guard into STOP state so that it can respond o the Marco Polo request
+    wifi.send("STOP", wifi.broadcast)
+
     while not wifi.receive_polo():
-        fwd_indicator.toggle(TriColourLED.YELLOW, TriColourLED.BLUE)
-        rev_indicator.toggle(TriColourLED.BLUE, TriColourLED.YELLOW)
+        fwd_indicator.toggle(Indicator.ORANGE, Indicator.BLUE)
+        rev_indicator.toggle(Indicator.BLUE, Indicator.ORANGE)
 
         if wifi.wlan.status() != 3:
             return STATES.CONNECT
@@ -170,8 +183,8 @@ def state_identify():
 
 def state_stopped():
     """Reset now that automatic control has ended."""
-    fwd_indicator.colour(TriColourLED.YELLOW)
-    rev_indicator.colour(TriColourLED.YELLOW)
+    fwd_indicator.show_guise(Indicator.ORANGE)
+    rev_indicator.show_guise(Indicator.ORANGE)
 
     new_speed = speed_knob.value()
     if new_speed >= 33 and new_speed <= 66:
@@ -182,8 +195,8 @@ def state_transition():
     """Transition to manual or automatic."""
     global last_speed, last_direction
 
-    fwd_indicator.colour(TriColourLED.PURPLE)
-    rev_indicator.colour(TriColourLED.PURPLE)
+    fwd_indicator.show_guise(Indicator.PURPLE)
+    rev_indicator.show_guise(Indicator.PURPLE)
 
     new_speed = speed_knob.value()
     last_speed = new_speed
@@ -217,14 +230,14 @@ def state_manual():
     new_direction = read_direction()
 
     if new_direction == Direction.FORWARD:
-        fwd_indicator.colour(TriColourLED.YELLOW)
-        rev_indicator.colour(TriColourLED.OFF)
+        fwd_indicator.show_guise(Indicator.ORANGE)
+        rev_indicator.show_guise(Indicator.OFF)
     elif new_direction == Direction.REVERSE:
-        fwd_indicator.colour(TriColourLED.OFF)
-        rev_indicator.colour(TriColourLED.YELLOW)
+        fwd_indicator.show_guise(Indicator.OFF)
+        rev_indicator.show_guise(Indicator.ORANGE)
     else:
-        fwd_indicator.colour(TriColourLED.OFF)
-        rev_indicator.colour(TriColourLED.OFF)
+        fwd_indicator.show_guise(Indicator.OFF)
+        rev_indicator.show_guise(Indicator.OFF)
 
     if fwd_switch.is_high() + rev_switch.is_high() == 2:
         wifi.send("STOP")
@@ -256,16 +269,16 @@ def state_automatic():
     if message is None:
         pass  # skip further parsing
     elif b"FORWARD_END" in message:
-        fwd_indicator.colour(TriColourLED.YELLOW)
-        rev_indicator.colour(TriColourLED.BLUE)
+        fwd_indicator.show_guise(Indicator.ORANGE)
+        rev_indicator.show_guise(Indicator.BLUE)
     elif b"REVERSE_END" in message:
-        fwd_indicator.colour(TriColourLED.BLUE)
-        rev_indicator.colour(TriColourLED.YELLOW)
+        fwd_indicator.show_guise(Indicator.BLUE)
+        rev_indicator.show_guise(Indicator.ORANGE)
     elif b"STOPPED" in message:
         return STATES.STOPPED
     else:
-        fwd_indicator.colour(TriColourLED.BLUE)
-        rev_indicator.colour(TriColourLED.BLUE)
+        fwd_indicator.show_guise(Indicator.BLUE)
+        rev_indicator.show_guise(Indicator.BLUE)
 
     new_speed = speed_knob.value()
     new_direction = read_direction()
@@ -279,8 +292,8 @@ def state_automatic():
 
 def state_shutdown():
     """Turn off hardware."""
-    fwd_indicator.colour(TriColourLED.OFF)
-    rev_indicator.colour(TriColourLED.OFF)
+    fwd_indicator.show_guise(Indicator.OFF)
+    rev_indicator.show_guise(Indicator.OFF)
 
     wifi.close_udp_socket()
     wifi.disconnect_wifi()
@@ -297,5 +310,7 @@ if __name__ == "__main__":
         STATES.AUTOMATIC: state_automatic,
         STATES.SHUTDOWN: state_shutdown,
     }
-    state_machine = StateMachine(state_functions, interrupt_state=STATES.SHUTDOWN)
+    state_machine = StateMachine(
+        state_functions, on_before_state=before_state, interrupt_state=STATES.SHUTDOWN
+    )
     state_machine.run_loop()

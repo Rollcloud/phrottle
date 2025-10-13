@@ -23,9 +23,10 @@ class StateMachine:
     The functions should return a STATES enum to set the next state to enter.
     """
 
-    def __init__(self, state_functions, interrupt_state=None) -> None:
+    def __init__(self, state_functions, on_before_state=None, interrupt_state=None) -> None:
         self.state = 0  # first state in the states enum
         self.state_functions = state_functions
+        self.on_before_state = on_before_state
         self.interrupt_state = interrupt_state
 
     def run_loop(self):
@@ -33,6 +34,8 @@ class StateMachine:
         try:
             while True:
                 print(f"state={self.state}")  # TODO: remove debug print statement
+                if self.on_before_state:
+                    self.on_before_state()
                 next_state = self.state_functions[self.state]()
                 self.state = next_state or self.state
         except KeyboardInterrupt:

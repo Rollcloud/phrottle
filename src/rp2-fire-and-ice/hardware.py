@@ -1,3 +1,4 @@
+import random
 import socket
 import time
 
@@ -97,6 +98,60 @@ class TriColourLED:
             self.colour(colour_2)
         else:
             self.colour(colour_1)
+
+
+class Indicator:
+    """A visual element that can appear in different guises, coupled with advanced effects."""
+
+    MAX_PWM = 65535
+
+    # Base ranges for guises
+    OFF = ((0, 0, 0), (0, 0, 0))
+    ORANGE = ((1, 0.2, 0), (1, 0.8, 0))
+    BLUE = ((0, 0, 1), (0.2, 0.2, 1))
+    PURPLE = ((0.7, 0, 0.7), (1, 0, 1))
+
+    def __init__(self, red_gpio, green_gpio, blue_gpio) -> None:
+        self.red_pin = Pin(red_gpio, Pin.OUT)
+        self.green_pin = Pin(green_gpio, Pin.OUT)
+        self.blue_pin = Pin(blue_gpio, Pin.OUT)
+
+        self.red_pwm = PWM(self.red_pin)
+        self.green_pwm = PWM(self.green_pin)
+        self.blue_pwm = PWM(self.blue_pin)
+
+        self.red_pwm.freq(1024)
+        self.green_pwm.freq(1024)
+        self.blue_pwm.freq(1024)
+
+        self.guise = self.OFF
+
+    def pwm_led(self, red: int, green: int, blue: int):
+        """Set the led to the given PWM values out of 65535."""
+        # invert the values for common anode
+        self.red_pwm.duty_u16(self.MAX_PWM - red)
+        self.green_pwm.duty_u16(self.MAX_PWM - green)
+        self.blue_pwm.duty_u16(self.MAX_PWM - blue)
+
+    def show_guise(self, guise, effect=None):
+        if effect == "flicker":
+            probability_change = random.random()
+            if probability_change >= 0.005:
+                return
+
+        ((red_low, green_low, blue_low), (red_high, green_high, blue_high)) = guise
+
+        red_value = random.randint(int(red_low * self.MAX_PWM), int(red_high * self.MAX_PWM))
+        green_value = random.randint(int(green_low * self.MAX_PWM), int(green_high * self.MAX_PWM))
+        blue_value = random.randint(int(blue_low * self.MAX_PWM), int(blue_high * self.MAX_PWM))
+
+        self.pwm_led(red_value, green_value, blue_value)
+
+    def toggle(self, guise_1, guise_2):
+        if self.guise == guise_1:
+            self.show_guise(guise_2)
+        else:
+            self.show_guise(guise_1)
 
 
 class WiFi:
