@@ -1,15 +1,15 @@
 """Create host WiFi network."""
 
 import utime
-from hardware import LED, PWM_LED, WiFi
+from hardware import LED, PWM_LED, CorelessMotor, WiFi
 from stately import STATES, StateMachine
 
-MAX_SPEED = 
 ACCELERATION = 3
 
 wifi = None
 wifi_led = None
 speed_led = None
+motor = None
 
 current_speed = 0
 current_direction = None
@@ -39,10 +39,11 @@ def send_state():
 
 def state_initialise():
     """Initialise state."""
-    global wifi_led, wifi, speed_led
+    global wifi_led, wifi, speed_led, motor
 
     wifi_led = LED()
     speed_led = PWM_LED(16)
+    motor = CorelessMotor(1)
 
     wifi = WiFi()
     wifi_led.pin.on()
@@ -67,6 +68,7 @@ def state_stop():
     """Stop state."""
     wifi_led.pin.toggle()
     speed_led.off()
+    motor.off()
 
     wifi.send("STOPPED", wifi.broadcast)
 
@@ -91,10 +93,11 @@ def state_manual():
     if message is None:
         pass  # skip further parsing
     elif b"CONTROL" in message:
-        _control, direction, speed = message.split()
+        _control, direction, speed = message.split()  # eg: CONTROL F 100 --> forward full speed
 
         speed_led.on()
         speed_led.brightness(int(speed))
+        motor.on(Direction.letter(direction), speed / 100)
     elif b"STOP" in message:
         return STATES.STOP
 
@@ -104,9 +107,11 @@ def state_forward():
     global current_direction
 
     current_direction = Direction.FORWARD
+    new_speed = speed_led.value + ACCELERATION
 
     speed_led.activate()
-    speed_led.brightness(speed_led.value + ACCELERATION)
+    speed_led.brightness(new_speed)
+    motor.on(current_direction, new_speed / 100)
 
     wifi.send("FORWARD", wifi.broadcast)
 
@@ -125,9 +130,11 @@ def state_reverse():
     global current_direction
 
     current_direction = Direction.REVERSE
+    new_speed = speed_led.value + ACCELERATION
 
     speed_led.activate()
-    speed_led.brightness(speed_led.value + ACCELERATION)
+    speed_led.brightness(new_speed)
+    motor.on(current_direction, new_speed / 100)
 
     wifi.send("REVERSE", wifi.broadcast)
 
@@ -143,7 +150,9 @@ def state_reverse():
 
 def state_slow():
     """Slow to a stop."""
-    speed_led.brightness(speed_led.value - ACCELERATION)
+    new_speed = speed_led.value - ACCELERATION
+    speed_led.brightness(new_speed)
+    motor.on(current_direction, new_speed / 100)
 
     if speed_led.value == 0:
         return STATES.BOUNCE
@@ -185,6 +194,7 @@ def state_bounce():
 def state_error():
     """Error state."""
     speed_led.off()
+    motor.off()
 
     message = wifi.receive()
     if message is None:
@@ -197,6 +207,7 @@ def state_shutdown():
     """Shutdown state."""
     wifi_led.pin.off()
     speed_led.off()
+    motor.off()
 
     wifi.close_udp_socket()
     wifi.disconnect_wifi()

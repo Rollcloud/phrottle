@@ -4,6 +4,7 @@ import time
 
 import network
 from machine import ADC, PWM, Pin
+from simply_robotics import CorelessMotor  # noqa: F401
 
 
 class Switch:
