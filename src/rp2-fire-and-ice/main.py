@@ -72,6 +72,8 @@ wifi = None
 last_speed = None
 last_direction = None
 
+direction_change_counter = 0  # Used for changing between manual and auto mode
+
 
 class Direction:
     """A numeric representation of the direction."""
@@ -224,7 +226,7 @@ def state_manual():
     - Compare to current speed and direction
     - If different, send CONTROL update over UDP
     """
-    global last_speed, last_direction
+    global last_speed, last_direction, direction_change_counter
 
     new_speed = speed_knob.value()
     new_direction = read_direction()
@@ -239,7 +241,11 @@ def state_manual():
         fwd_indicator.show_guise(Indicator.OFF)
         rev_indicator.show_guise(Indicator.OFF)
 
-    if fwd_switch.is_high() + rev_switch.is_high() == 2:
+    if new_speed == 0 and new_direction != last_direction:
+        direction_change_counter += 1
+
+    if direction_change_counter >= 8:
+        direction_change_counter = 0
         wifi.send("STOP")
         return STATES.STOPPED
     elif new_direction != last_direction or new_speed != last_speed:

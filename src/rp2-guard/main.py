@@ -4,6 +4,7 @@ import utime
 from hardware import LED, PWM_LED, WiFi
 from stately import STATES, StateMachine
 
+MAX_SPEED = 
 ACCELERATION = 3
 
 wifi = None
