@@ -20,6 +20,9 @@ current_speed = 0
 current_direction = None
 future_ticks = None
 
+last_button_state = False
+button_state_counter = 0
+
 
 class Direction:
     """A numeric representation of the direction."""
@@ -74,31 +77,30 @@ def state_connect():
 
 def state_stop():
     """Stop state."""
+    global last_button_state, button_state_counter
+
     wifi_led.pin.toggle()
     speed_led.off()
     motor.off()
 
     wifi.send("STOPPED", wifi.broadcast)
 
+    current_button_state = stop_button.is_active()
+
+    if last_button_state is False and current_button_state is True:
+        button_state_counter += 1
+
+    # start automatic mode by pressing button
+    if button_state_counter >= 1:
+        last_button_state = current_button_state
+        button_state_counter = 0
+        return STATES.BOUNCE
+
+    last_button_state = current_button_state
+
     data = wifi.receive(include_ip_address=True)
     if data is None:
         return  # skip further parsing
-
-    # start automatic mode, by holding down button
-    if stop_button.is_active():
-        if future_ticks is None:
-            future_ticks = utime.ticks_add(utime.ticks_ms(), HOLD_BUTTON_UNTIL_START_AUTO)
-        elif utime.ticks_diff(future_ticks, utime.ticks_ms()) <= 0:
-            future_ticks = None
-            if stop_button.is_active():  # if it's still active
-                return STATES.BOUNCE
-            else:
-                pass  # Do nothing
-        else:
-            pass  # wait for time to pass...
-    else:
-        # reset hold timer
-        future_ticks = None
 
     message, ip_address = data
     if b"MARCO" in message:
@@ -210,15 +212,6 @@ def state_bounce():
     wifi_led.pin.off()
 
     wifi.send("BOUNCE", wifi.broadcast)
-
-    if stop_button.is_active():
-        return STATES.STOP
-
-    message = wifi.receive()
-    if message is None:
-        pass  # skip further parsing
-    elif b"STOP" in message:
-        return STATES.STOP
 
     if future_ticks is None:
         future_ticks = utime.ticks_add(utime.ticks_ms(), WAIT_BEFORE_CHANGING_DIRECTION)
