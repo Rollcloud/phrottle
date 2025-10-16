@@ -144,15 +144,15 @@ def state_forward():
 
     if stop_switch.is_high():
         return STATES.STOP
+    if fwd_sensor.is_high():
+        wifi.send("FORWARD_END", wifi.broadcast)
+        return STATES.SLOW
 
     message = wifi.receive()
     if message is None:
         pass  # skip further parsing
     elif b"STOP" in message:
         return STATES.STOP
-    elif b"TRIGGER" in message:
-        wifi.send("FORWARD_END", wifi.broadcast)
-        return STATES.SLOW
 
 
 def state_reverse():
@@ -170,15 +170,15 @@ def state_reverse():
 
     if stop_switch.is_high():
         return STATES.STOP
+    if rev_sensor.is_high():
+        wifi.send("REVERSE_END", wifi.broadcast)
+        return STATES.SLOW
 
     message = wifi.receive()
     if message is None:
         pass  # skip further parsing
     elif b"STOP" in message:
         return STATES.STOP
-    elif b"TRIGGER" in message:
-        wifi.send("REVERSE_END", wifi.broadcast)
-        return STATES.SLOW
 
 
 def state_slow():
@@ -192,6 +192,9 @@ def state_slow():
 
     if stop_switch.is_high():
         return STATES.STOP
+
+    if fwd_sensor.is_high() and rev_sensor.is_high():
+        return STATES.ERROR
 
     message = wifi.receive()
     if message is None:
@@ -234,6 +237,8 @@ def state_error():
     """Error state."""
     speed_led.off()
     motor.off()
+
+    wifi.send("ERROR", wifi.broadcast)
 
     if stop_switch.is_high():
         return STATES.STOP
