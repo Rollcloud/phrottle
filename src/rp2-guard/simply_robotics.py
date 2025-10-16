@@ -71,15 +71,15 @@ class PWM_Motor:
         # Convert 0-1 to 0-65535
         pwmVal = int(speed * self.scale_max_speed * 65535)
 
-        if direction == self.FORWARD:
+        if direction == Direction.FORWARD:
             self.forwardPin.duty_u16(pwmVal)
             self.reversePin.duty_u16(0)
 
-        elif direction == self.REVERSE:
+        elif direction == Direction.REVERSE:
             self.forwardPin.duty_u16(0)
             self.reversePin.duty_u16(pwmVal)
 
-        elif direction == self.NEUTRAL:
+        elif direction == Direction.NEUTRAL:
             self.forwardPin.duty_u16(0)
             self.reversePin.duty_u16(0)
 
@@ -88,7 +88,7 @@ class PWM_Motor:
 
     def off(self):
         """Turn off motor, setting direction to neutral and speed to zero."""
-        self.on(self.NEUTRAL, 0)
+        self.on(Direction.NEUTRAL, 0)
 
 
 class DC_Motor(PWM_Motor):
@@ -96,7 +96,7 @@ class DC_Motor(PWM_Motor):
 
     def __init__(self, motor_number, scale_max_speed=1.0, frequency=100):
         """Create a new DC motor from the given motor number (1-4)."""
-        super(motor_number, scale_max_speed, frequency)
+        super().__init__(motor_number, scale_max_speed=scale_max_speed, frequency=frequency)
 
 
 class CorelessMotor(PWM_Motor):
@@ -104,4 +104,4 @@ class CorelessMotor(PWM_Motor):
 
     def __init__(self, motor_number, scale_max_speed=0.5, frequency=20_000):
         """Create a new coreless motor from the given motor number (1-4)."""
-        super(motor_number, scale_max_speed, frequency)
+        super().__init__(motor_number, scale_max_speed=scale_max_speed, frequency=frequency)
