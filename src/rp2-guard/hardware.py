@@ -13,8 +13,8 @@ class Switch:
     def __init__(self, gpio, pull=Pin.PULL_UP) -> None:
         self.pin = Pin(gpio, Pin.IN, pull)
 
-    def is_high(self) -> int:
-        return 1 - self.pin.value()  # invert the value for pull-up resistor
+    def is_active(self) -> bool:
+        return (1 - self.pin.value()) == 1  # inverted due to connection between pin an ground
 
 
 class Slider:

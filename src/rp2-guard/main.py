@@ -85,12 +85,12 @@ def state_stop():
         return  # skip further parsing
 
     # start automatic mode, by holding down button
-    if stop_button.is_high():
+    if stop_button.is_active():
         if future_ticks is None:
             future_ticks = utime.ticks_add(utime.ticks_ms(), HOLD_BUTTON_UNTIL_START_AUTO)
         elif utime.ticks_diff(future_ticks, utime.ticks_ms()) <= 0:
             future_ticks = None
-            if stop_button.is_high():  # if it's still high
+            if stop_button.is_active():  # if it's still active
                 return STATES.BOUNCE
             else:
                 pass  # Do nothing
@@ -113,7 +113,7 @@ def state_manual():
     """Manual state."""
     wifi_led.pin.on()
 
-    if stop_button.is_high():
+    if stop_button.is_active():
         return STATES.STOP
 
     message = wifi.receive()
@@ -142,9 +142,9 @@ def state_forward():
 
     wifi.send("FORWARD", wifi.broadcast)
 
-    if stop_button.is_high():
+    if stop_button.is_active():
         return STATES.STOP
-    if fwd_sensor.is_high():
+    if fwd_sensor.is_active():
         wifi.send("FORWARD_END", wifi.broadcast)
         return STATES.SLOW
 
@@ -168,9 +168,9 @@ def state_reverse():
 
     wifi.send("REVERSE", wifi.broadcast)
 
-    if stop_button.is_high():
+    if stop_button.is_active():
         return STATES.STOP
-    if rev_sensor.is_high():
+    if rev_sensor.is_active():
         wifi.send("REVERSE_END", wifi.broadcast)
         return STATES.SLOW
 
@@ -190,10 +190,10 @@ def state_slow():
     if speed_led.value == 0:
         return STATES.BOUNCE
 
-    if stop_button.is_high():
+    if stop_button.is_active():
         return STATES.STOP
 
-    if fwd_sensor.is_high() and rev_sensor.is_high():
+    if fwd_sensor.is_active() and rev_sensor.is_active():
         return STATES.ERROR
 
     message = wifi.receive()
@@ -211,7 +211,7 @@ def state_bounce():
 
     wifi.send("BOUNCE", wifi.broadcast)
 
-    if stop_button.is_high():
+    if stop_button.is_active():
         return STATES.STOP
 
     message = wifi.receive()
@@ -240,7 +240,7 @@ def state_error():
 
     wifi.send("ERROR", wifi.broadcast)
 
-    if stop_button.is_high():
+    if stop_button.is_active():
         return STATES.STOP
 
     message = wifi.receive()
