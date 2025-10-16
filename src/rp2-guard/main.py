@@ -1,12 +1,17 @@
 """Create host WiFi network."""
 
 import utime
-from hardware import LED, PWM_LED, CorelessMotor, WiFi
+from hardware import LED, PWM_LED, CorelessMotor, Switch, WiFi
 from stately import STATES, StateMachine
 
 ACCELERATION = 3
+WAIT_BEFORE_CHANGING_DIRECTION = 2000  # milliseconds
+HOLD_BUTTON_UNTIL_START_AUTO = 800  # milliseconds
 
 wifi = None
+stop_switch = None
+fwd_sensor = None
+rev_sensor = None
 wifi_led = None
 speed_led = None
 motor = None
@@ -39,9 +44,12 @@ def send_state():
 
 def state_initialise():
     """Initialise state."""
-    global wifi_led, wifi, speed_led, motor
+    global wifi_led, wifi, speed_led, motor, fwd_sensor, rev_sensor, stop_switch
 
     wifi_led = LED()
+    stop_switch = Switch(21)
+    rev_sensor = Switch(26, pull=None)
+    fwd_sensor = Switch(27, pull=None)
     speed_led = PWM_LED(16)
     motor = CorelessMotor(1)
 
@@ -76,6 +84,22 @@ def state_stop():
     if data is None:
         return  # skip further parsing
 
+    # start automatic mode, by holding down button
+    if stop_switch.is_high():
+        if future_ticks is None:
+            future_ticks = utime.ticks_add(utime.ticks_ms(), HOLD_BUTTON_UNTIL_START_AUTO)
+        elif utime.ticks_diff(future_ticks, utime.ticks_ms()) <= 0:
+            future_ticks = None
+            if stop_switch.is_high():  # if it's still high
+                return STATES.BOUNCE
+            else:
+                pass  # Do nothing
+        else:
+            pass  # wait for time to pass...
+    else:
+        # reset hold timer
+        future_ticks = None
+
     message, ip_address = data
     if b"MARCO" in message:
         wifi.send("POLO", ip_address)
@@ -88,6 +112,9 @@ def state_stop():
 def state_manual():
     """Manual state."""
     wifi_led.pin.on()
+
+    if stop_switch.is_high():
+        return STATES.STOP
 
     message = wifi.receive()
     if message is None:
@@ -115,6 +142,9 @@ def state_forward():
 
     wifi.send("FORWARD", wifi.broadcast)
 
+    if stop_switch.is_high():
+        return STATES.STOP
+
     message = wifi.receive()
     if message is None:
         pass  # skip further parsing
@@ -138,6 +168,9 @@ def state_reverse():
 
     wifi.send("REVERSE", wifi.broadcast)
 
+    if stop_switch.is_high():
+        return STATES.STOP
+
     message = wifi.receive()
     if message is None:
         pass  # skip further parsing
@@ -157,6 +190,9 @@ def state_slow():
     if speed_led.value == 0:
         return STATES.BOUNCE
 
+    if stop_switch.is_high():
+        return STATES.STOP
+
     message = wifi.receive()
     if message is None:
         pass  # skip further parsing
@@ -172,6 +208,9 @@ def state_bounce():
 
     wifi.send("BOUNCE", wifi.broadcast)
 
+    if stop_switch.is_high():
+        return STATES.STOP
+
     message = wifi.receive()
     if message is None:
         pass  # skip further parsing
@@ -179,7 +218,7 @@ def state_bounce():
         return STATES.STOP
 
     if future_ticks is None:
-        future_ticks = utime.ticks_add(utime.ticks_ms(), 2000)
+        future_ticks = utime.ticks_add(utime.ticks_ms(), WAIT_BEFORE_CHANGING_DIRECTION)
     elif utime.ticks_diff(future_ticks, utime.ticks_ms()) <= 0:
         future_ticks = None
         if current_direction == Direction.FORWARD:
@@ -195,6 +234,9 @@ def state_error():
     """Error state."""
     speed_led.off()
     motor.off()
+
+    if stop_switch.is_high():
+        return STATES.STOP
 
     message = wifi.receive()
     if message is None:

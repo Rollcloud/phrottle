@@ -10,8 +10,8 @@ from simply_robotics import CorelessMotor  # noqa: F401
 class Switch:
     """An ON-OFF input switch with an internal pull-up resistor."""
 
-    def __init__(self, gpio) -> None:
-        self.pin = Pin(gpio, Pin.IN, Pin.PULL_UP)
+    def __init__(self, gpio, pull=Pin.PULL_UP) -> None:
+        self.pin = Pin(gpio, Pin.IN, pull)
 
     def is_high(self) -> int:
         return 1 - self.pin.value()  # invert the value for pull-up resistor
