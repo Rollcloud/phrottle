@@ -9,7 +9,7 @@ WAIT_BEFORE_CHANGING_DIRECTION = 2000  # milliseconds
 HOLD_BUTTON_UNTIL_START_AUTO = 800  # milliseconds
 
 wifi = None
-stop_switch = None
+stop_button = None
 fwd_sensor = None
 rev_sensor = None
 wifi_led = None
@@ -44,10 +44,10 @@ def send_state():
 
 def state_initialise():
     """Initialise state."""
-    global wifi_led, wifi, speed_led, motor, fwd_sensor, rev_sensor, stop_switch
+    global wifi_led, wifi, speed_led, motor, fwd_sensor, rev_sensor, stop_button
 
     wifi_led = LED()
-    stop_switch = Switch(21)
+    stop_button = Switch(21)
     rev_sensor = Switch(26, pull=None)
     fwd_sensor = Switch(27, pull=None)
     speed_led = PWM_LED(16)
@@ -85,12 +85,12 @@ def state_stop():
         return  # skip further parsing
 
     # start automatic mode, by holding down button
-    if stop_switch.is_high():
+    if stop_button.is_high():
         if future_ticks is None:
             future_ticks = utime.ticks_add(utime.ticks_ms(), HOLD_BUTTON_UNTIL_START_AUTO)
         elif utime.ticks_diff(future_ticks, utime.ticks_ms()) <= 0:
             future_ticks = None
-            if stop_switch.is_high():  # if it's still high
+            if stop_button.is_high():  # if it's still high
                 return STATES.BOUNCE
             else:
                 pass  # Do nothing
@@ -113,7 +113,7 @@ def state_manual():
     """Manual state."""
     wifi_led.pin.on()
 
-    if stop_switch.is_high():
+    if stop_button.is_high():
         return STATES.STOP
 
     message = wifi.receive()
@@ -142,7 +142,7 @@ def state_forward():
 
     wifi.send("FORWARD", wifi.broadcast)
 
-    if stop_switch.is_high():
+    if stop_button.is_high():
         return STATES.STOP
     if fwd_sensor.is_high():
         wifi.send("FORWARD_END", wifi.broadcast)
@@ -168,7 +168,7 @@ def state_reverse():
 
     wifi.send("REVERSE", wifi.broadcast)
 
-    if stop_switch.is_high():
+    if stop_button.is_high():
         return STATES.STOP
     if rev_sensor.is_high():
         wifi.send("REVERSE_END", wifi.broadcast)
@@ -190,7 +190,7 @@ def state_slow():
     if speed_led.value == 0:
         return STATES.BOUNCE
 
-    if stop_switch.is_high():
+    if stop_button.is_high():
         return STATES.STOP
 
     if fwd_sensor.is_high() and rev_sensor.is_high():
@@ -211,7 +211,7 @@ def state_bounce():
 
     wifi.send("BOUNCE", wifi.broadcast)
 
-    if stop_switch.is_high():
+    if stop_button.is_high():
         return STATES.STOP
 
     message = wifi.receive()
@@ -240,7 +240,7 @@ def state_error():
 
     wifi.send("ERROR", wifi.broadcast)
 
-    if stop_switch.is_high():
+    if stop_button.is_high():
         return STATES.STOP
 
     message = wifi.receive()
