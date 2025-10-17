@@ -11,9 +11,10 @@ class STATES:
     FORWARD = 4
     REVERSE = 5
     SLOW = 6
-    BOUNCE = 7
-    ERROR = 8
-    SHUTDOWN = 9
+    WAIT = 7
+    BOUNCE = 8
+    ERROR = 9
+    SHUTDOWN = 10
 
 
 class StateMachine:

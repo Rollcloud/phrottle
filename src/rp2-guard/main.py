@@ -46,8 +46,19 @@ class Direction:
         return letters[direction]
 
 
-def send_state():
-    pass
+def is_wait_over(wait_milliseconds):
+    """Wait for the given period and return True after the period has passed."""
+    global future_ticks
+
+    if future_ticks is None:
+        future_ticks = utime.ticks_add(utime.ticks_ms(), wait_milliseconds)
+    elif utime.ticks_diff(future_ticks, utime.ticks_ms()) <= 0:
+        future_ticks = None
+        return True
+    else:
+        pass  # wait for time to pass...
+
+    return False
 
 
 def state_initialise():
@@ -113,7 +124,7 @@ def state_stop():
     elif b"CONTROL" in message:
         return STATES.MANUAL
     elif b"AUTO" in message:
-        return STATES.BOUNCE
+        return STATES.WAIT
 
 
 def state_manual():
@@ -197,7 +208,7 @@ def state_slow():
     motor.on(current_direction, new_speed / 100)
 
     if speed_led.value == 0:
-        return STATES.BOUNCE
+        return STATES.WAIT
 
     if stop_button.is_active():
         return STATES.STOP
@@ -212,28 +223,38 @@ def state_slow():
         return STATES.STOP
 
 
-def state_bounce():
-    """Wait, then change direction."""
+def state_wait():
+    """Stop and wait for a little."""
     global future_ticks, current_direction
 
+    motor.off()
+    wifi_led.pin.off()
+
+    wait_milliseconds = random.randint(
+        MIN_WAIT_BEFORE_CHANGING_DIRECTION, MAX_WAIT_BEFORE_CHANGING_DIRECTION
+    )
+    if is_wait_over(wait_milliseconds):
+        return STATES.BOUNCE
+
+
+def state_bounce():
+    """Change direction."""
+    global future_ticks, current_direction
+
+    motor.off()
     wifi_led.pin.off()
 
     wifi.send("BOUNCE", wifi.broadcast)
 
-    if future_ticks is None:
-        wait_milliseconds = random.randint(
-            MIN_WAIT_BEFORE_CHANGING_DIRECTION, MAX_WAIT_BEFORE_CHANGING_DIRECTION
-        )
-        future_ticks = utime.ticks_add(utime.ticks_ms(), wait_milliseconds)
-    elif utime.ticks_diff(future_ticks, utime.ticks_ms()) <= 0:
-        future_ticks = None
-        if current_direction == Direction.FORWARD:
-            return STATES.REVERSE
-        else:
-            # Go forward by default
-            return STATES.FORWARD
+    # wait for button to be released before continuing to prevent unintentional stop signal
+    if stop_button.is_active():
+        return
+
+    if current_direction == Direction.FORWARD:
+        return STATES.REVERSE
     else:
-        pass  # wait for time to pass...
+        # Go forward by default
+        return STATES.FORWARD
 
 
 def state_error():
@@ -272,6 +293,7 @@ if __name__ == "__main__":
         STATES.FORWARD: state_forward,
         STATES.REVERSE: state_reverse,
         STATES.SLOW: state_slow,
+        STATES.WAIT: state_wait,
         STATES.BOUNCE: state_bounce,
         STATES.ERROR: state_error,
         STATES.SHUTDOWN: state_shutdown,
