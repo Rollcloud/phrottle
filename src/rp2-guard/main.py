@@ -1,5 +1,7 @@
 """Create host WiFi network."""
 
+import random
+
 import utime
 from hardware import LED, PWM_LED, CorelessMotor, Switch, WiFi
 from stately import STATES, StateMachine
@@ -7,7 +9,8 @@ from stately import STATES, StateMachine
 ACCELERATION = 4  # percent / iteration
 DECELERATION = 100  # percent / iteration
 MAX_SPEED_AUTO = 37.5  # percent of maximum
-WAIT_BEFORE_CHANGING_DIRECTION = 2000  # milliseconds
+MIN_WAIT_BEFORE_CHANGING_DIRECTION = 1000  # milliseconds
+MAX_WAIT_BEFORE_CHANGING_DIRECTION = 7000  # milliseconds
 HOLD_BUTTON_UNTIL_START_AUTO = 800  # milliseconds
 
 wifi = None
@@ -218,7 +221,10 @@ def state_bounce():
     wifi.send("BOUNCE", wifi.broadcast)
 
     if future_ticks is None:
-        future_ticks = utime.ticks_add(utime.ticks_ms(), WAIT_BEFORE_CHANGING_DIRECTION)
+        wait_milliseconds = random.randint(
+            MIN_WAIT_BEFORE_CHANGING_DIRECTION, MAX_WAIT_BEFORE_CHANGING_DIRECTION
+        )
+        future_ticks = utime.ticks_add(utime.ticks_ms(), wait_milliseconds)
     elif utime.ticks_diff(future_ticks, utime.ticks_ms()) <= 0:
         future_ticks = None
         if current_direction == Direction.FORWARD:
