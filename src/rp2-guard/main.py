@@ -4,7 +4,9 @@ import utime
 from hardware import LED, PWM_LED, CorelessMotor, Switch, WiFi
 from stately import STATES, StateMachine
 
-ACCELERATION = 3
+ACCELERATION = 4  # percent / iteration
+DECELERATION = 100  # percent / iteration
+MAX_SPEED_AUTO = 40  # percent of maximum
 WAIT_BEFORE_CHANGING_DIRECTION = 2000  # milliseconds
 HOLD_BUTTON_UNTIL_START_AUTO = 800  # milliseconds
 
@@ -54,7 +56,7 @@ def state_initialise():
     rev_sensor = Switch(26, pull=None)
     fwd_sensor = Switch(27, pull=None)
     speed_led = PWM_LED(16)
-    motor = CorelessMotor(1)
+    motor = CorelessMotor(0, scale_max_speed=0.3)
 
     wifi = WiFi()
     wifi_led.pin.on()
@@ -137,6 +139,7 @@ def state_forward():
 
     current_direction = Direction.FORWARD
     new_speed = speed_led.value + ACCELERATION
+    new_speed = min(new_speed, MAX_SPEED_AUTO)
 
     speed_led.activate()
     speed_led.brightness(new_speed)
@@ -163,6 +166,7 @@ def state_reverse():
 
     current_direction = Direction.REVERSE
     new_speed = speed_led.value + ACCELERATION
+    new_speed = min(new_speed, MAX_SPEED_AUTO)
 
     speed_led.activate()
     speed_led.brightness(new_speed)
@@ -185,7 +189,7 @@ def state_reverse():
 
 def state_slow():
     """Slow to a stop."""
-    new_speed = speed_led.value - ACCELERATION
+    new_speed = speed_led.value - DECELERATION
     speed_led.brightness(new_speed)
     motor.on(current_direction, new_speed / 100)
 
