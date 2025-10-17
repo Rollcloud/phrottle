@@ -6,7 +6,7 @@ from stately import STATES, StateMachine
 
 ACCELERATION = 4  # percent / iteration
 DECELERATION = 100  # percent / iteration
-MAX_SPEED_AUTO = 40  # percent of maximum
+MAX_SPEED_AUTO = 37.5  # percent of maximum
 WAIT_BEFORE_CHANGING_DIRECTION = 2000  # milliseconds
 HOLD_BUTTON_UNTIL_START_AUTO = 800  # milliseconds
 
