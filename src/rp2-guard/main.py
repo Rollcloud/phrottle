@@ -8,10 +8,9 @@ from stately import STATES, StateMachine
 
 ACCELERATION = 4  # percent / iteration
 DECELERATION = 100  # percent / iteration
-MAX_SPEED_AUTO = 37.5  # percent of maximum
+MAX_SPEED_AUTO = 40  # percent of maximum
 MIN_WAIT_BEFORE_CHANGING_DIRECTION = 1000  # milliseconds
 MAX_WAIT_BEFORE_CHANGING_DIRECTION = 7000  # milliseconds
-HOLD_BUTTON_UNTIL_START_AUTO = 800  # milliseconds
 
 wifi = None
 stop_button = None
@@ -37,13 +36,22 @@ class Direction:
     FORWARD = 1
 
     @staticmethod
-    def letter(direction):
+    def letter(direction_number):
         letters = {
             -1: "R",
             0: "N",
             1: "F",
         }
-        return letters[direction]
+        return letters[direction_number]
+
+    @staticmethod
+    def number(direction_letter):
+        numbers = {
+            "R": -1,
+            "N": 0,
+            "F": 1,
+        }
+        return numbers[direction_letter]
 
 
 def is_wait_over(wait_milliseconds):
@@ -142,7 +150,7 @@ def state_manual():
 
         speed_led.on()
         speed_led.brightness(int(speed))
-        motor.on(Direction.letter(direction), speed / 100)
+        motor.on(Direction.number(direction.decode()), int(speed) / 100)
     elif b"STOP" in message:
         return STATES.STOP
 

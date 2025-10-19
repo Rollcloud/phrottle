@@ -56,7 +56,7 @@
 
 from time import sleep
 
-from hardware import Indicator, Slider, Switch, WiFi
+from hardware import LED, Indicator, Slider, Switch, WiFi
 from stately import STATES, StateMachine
 
 fwd_indicator = None
@@ -94,10 +94,9 @@ class Direction:
 
 def read_direction() -> Direction:
     """Read the direction switches and return the resulting Direction."""
-    value = fwd_switch.is_high() - rev_switch.is_high()
+    value = 1 if fwd_switch.is_high() else -1  # forward or reverse from a single switch
 
-    # TODO: convert to Direction constant
-
+    # TODO: convert result to Direction constant
     return value
 
 
@@ -115,13 +114,17 @@ def state_initialise():
     """Initialise hardware when power is first applied."""
     global fwd_indicator, rev_indicator, fwd_switch, rev_switch, wifi, speed_knob
 
-    fwd_indicator = Indicator(4, 2, 3)
-    rev_indicator = Indicator(13, 12, 11)
+    fwd_indicator = Indicator(10, 13, 12)
+    rev_indicator = Indicator(21, 18, 19)
 
-    fwd_switch = Switch(14)
-    rev_switch = Switch(15)
+    fwd_switch = Switch(17)
+    # rev_switch = Switch(16)
 
-    speed_knob = Slider(28)
+    speed_knob = Slider(27)
+
+    LED(11).pin.on()  # enable fwd_indicator
+    LED(20).pin.on()  # enable rev_indicator
+    LED(26).pin.on()  # enable speed_knob
 
     wifi = WiFi()
 
@@ -243,8 +246,10 @@ def state_manual():
 
     if new_speed == 0 and new_direction != last_direction:
         direction_change_counter += 1
+    if new_speed > 0:
+        direction_change_counter = 0
 
-    if direction_change_counter >= 8:
+    if direction_change_counter >= 4:
         direction_change_counter = 0
         wifi.send("STOP")
         return STATES.STOPPED
