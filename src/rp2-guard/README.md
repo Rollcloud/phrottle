@@ -4,7 +4,8 @@
 
 This is a semi-automatic motor driver Pico that can controlled over UDP (see [rp2-fire-and-ice](../rp2-fire-and-ice)) and by sensors.
 
-<video controls src="media/demo-compressed.mp4" title="Guard demonstration"></video>
+https://github.com/user-attachments/assets/c86b22d5-0304-40bb-87a1-32c6c39a7a9a
+
 _Demonstration of Guard in automatic mode during development - note the laser position sensors activating as the train passes by_
 
 Guard has two primary modes of operation: manual and automatic. In manual mode, it will set the speed and direction of the train's motor based on what it is commanded over WiFi.
@@ -22,7 +23,7 @@ While in automatic mode, position sensor feedback will be sent to the Fire and I
 
 Much of which can be sourced from https://thepihut.com/
 
-<img src="media/guard.jpg" alt="Image of a Pico W attached to a Kitronic Simple Robotics board with added wires" style="max-width:50%; height:auto;" />
+<img src="media/guard.jpg" alt="Image of a Pico W attached to a Kitronic Simple Robotics board with added wires" width="50%" />
 
 _The assembled hardware, with custom signal-distribution board, ready for mounting to a baseboard_
 
